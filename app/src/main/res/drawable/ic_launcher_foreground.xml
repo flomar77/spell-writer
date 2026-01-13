@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Simple ghost icon placeholder -->
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+
+    <!-- Ghost body -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M54,28
+                         C40,28 30,40 30,52
+                         L30,72
+                         C30,74 32,76 34,74
+                         L38,70
+                         C40,68 42,68 44,70
+                         L48,74
+                         C50,76 52,76 54,74
+                         L58,70
+                         C60,68 62,68 64,70
+                         L68,74
+                         C70,76 72,76 74,74
+                         L78,70
+                         L78,52
+                         C78,40 68,28 54,28
+                         Z"/>
+
+    <!-- Left eye -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,48
+                         C44,45 46,43 49,43
+                         C52,43 54,45 54,48
+                         C54,51 52,53 49,53
+                         C46,53 44,51 44,48
+                         Z"/>
+
+    <!-- Right eye -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,48
+                         C54,45 56,43 59,43
+                         C62,43 64,45 64,48
+                         C64,51 62,53 59,53
+                         C56,53 54,51 54,48
+                         Z"/>
+
+    <!-- Left pupil -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M48,48m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
+
+    <!-- Right pupil -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M60,48m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
+
+    <!-- Smile -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M46,58 Q54,64 62,58"/>
+</vector>

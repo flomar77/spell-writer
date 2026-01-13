@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name -->
+    <string name="app_name">Spell Writer</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">SPELL WRITER</string>
+    <string name="home_instruction">To win, write the words you will hear correctly</string>
+    <string name="home_play">PLAY</string>
+    <string name="world_wizard">Wizard</string>
+    <string name="world_pirate">Pirate</string>
+    <string name="world_locked">Locked</string>
+
+    <!-- Game Screen -->
+    <string name="btn_play_description">New word</string>
+    <string name="btn_repeat_description">Repeat</string>
+    <string name="progress_format">%1$d/20</string>
+
+    <!-- Celebrations -->
+    <string name="star_earned">Star earned!</string>
+    <string name="world_complete">World complete!</string>
+    <string name="new_world_unlocked">New world unlocked!</string>
+    <string name="continue_btn">CONTINUE</string>
+    <string name="home_btn">HOME</string>
+</resources>

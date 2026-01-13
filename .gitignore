@@ -1,0 +1,42 @@
+# Gradle files
+.gradle/
+build/
+gradle/
+gradlew
+gradlew.bat
+
+# Local configuration file (SDK path, etc)
+local.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Android Studio
+captures/
+.externalNativeBuild
+.cxx/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Build outputs
+*.apk
+*.ap_
+*.aab
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# macOS
+.DS_Store
+
+# Android Profiling
+*.hprof
