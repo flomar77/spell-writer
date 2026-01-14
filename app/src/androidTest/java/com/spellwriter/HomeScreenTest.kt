@@ -22,7 +22,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -40,7 +44,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -55,7 +63,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -71,7 +83,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -87,7 +103,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -103,7 +123,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 
@@ -120,7 +144,11 @@ class HomeScreenTest {
         var playClicked = false
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = { playClicked = true })
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = { playClicked = true },
+                    onStarClick = {}
+                )
             }
         }
 
@@ -136,7 +164,11 @@ class HomeScreenTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                HomeScreen(onPlayClick = {})
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {}
+                )
             }
         }
 

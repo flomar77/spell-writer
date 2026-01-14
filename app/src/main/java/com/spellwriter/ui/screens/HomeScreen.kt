@@ -13,19 +13,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spellwriter.R
 import com.spellwriter.data.models.GhostExpression
+import com.spellwriter.data.models.Progress
 import com.spellwriter.ui.components.Ghost
+import com.spellwriter.ui.components.WorldProgressRow
 
 /**
- * Home Screen for Story 1.1 - Simple welcoming interface.
- * Displays app title, ghost character, instructions, and play button.
- * No progress tracking or star system (those are added in future stories).
+ * Home Screen for Stories 1.1 & 1.2 - Welcoming interface with progress tracking.
+ * Displays app title, ghost character, instructions, star progress, and play button.
+ * Story 1.2 adds progress tracking and star replay functionality.
  *
+ * @param progress User progress tracking (Story 1.2)
  * @param onPlayClick Callback when user taps the PLAY button to start the game
+ * @param onStarClick Callback when user taps a star to replay that level (Story 1.2)
  * @param modifier Optional modifier for the screen
  */
 @Composable
 fun HomeScreen(
+    progress: Progress,
     onPlayClick: () -> Unit,
+    onStarClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -57,6 +63,13 @@ fun HomeScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp),
             style = MaterialTheme.typography.bodyLarge
+        )
+
+        // Star Progress Display (Story 1.2)
+        WorldProgressRow(
+            worldName = stringResource(R.string.world_wizard),
+            earnedStars = progress.wizardStars,
+            onStarClick = onStarClick
         )
 
         // PLAY Button with accessibility
