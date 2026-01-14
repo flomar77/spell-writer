@@ -1,20 +1,29 @@
 package com.spellwriter.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spellwriter.data.models.GhostExpression
+import com.spellwriter.ui.components.Ghost
+import com.spellwriter.ui.components.Grimoire
+import com.spellwriter.ui.components.SpellKeyboard
+import com.spellwriter.ui.components.StarProgress
 
 /**
- * Game Screen for Stories 1.1 & 1.2 - Minimal placeholder with star level awareness.
+ * Game Screen with complete layout.
  * Story 1.1: Basic stub for navigation testing.
  * Story 1.2: Accepts starNumber and isReplaySession parameters for future word selection.
- * Full game screen implementation will be done in Story 1.3.
+ * Story 1.3: Complete functional layout with all UI components.
  *
  * @param starNumber The star level (1, 2, or 3) to play (Story 1.2)
  * @param isReplaySession If true, don't update progress when completing (Story 1.2)
@@ -30,15 +39,98 @@ fun GameScreen(
     onStarComplete: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    // Placeholder state - actual game logic comes in Story 1.4
+    var wordsCompleted by remember { mutableStateOf(0) }
+    var ghostExpression by remember { mutableStateOf(GhostExpression.NEUTRAL) }
+    var typedLetters by remember { mutableStateOf("") }
+    var sessionStars by remember { mutableStateOf(0) }  // Always 0 until Story 2.4
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Text(
-            text = "Game Screen - Star $starNumber\n${if (isReplaySession) "(Replay Mode)" else "(Progression Mode)"}\n(Full gameplay coming in Story 1.3)",
-            fontSize = 24.sp,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleLarge
+        // Top row: Progress bar + Ghost
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Progress indicator
+            Column(modifier = Modifier.weight(1f)) {
+                Text("$wordsCompleted/20", fontSize = 16.sp)
+                LinearProgressIndicator(
+                    progress = (wordsCompleted / 20f).coerceIn(0f, 1f),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            // Ghost in top-right
+            Ghost(
+                expression = ghostExpression,
+                modifier = Modifier.size(80.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Main content area with stars and grimoire
+        Row(
+            modifier = Modifier.weight(1f)
+        ) {
+            // Left side: Session stars
+            StarProgress(
+                earnedStars = sessionStars,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+
+            // Center: Grimoire
+            Grimoire(
+                typedLetters = typedLetters,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Audio control buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { /* Placeholder - TTS in Story 1.4 */ },
+                modifier = Modifier.size(56.dp)
+            ) {
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = "Play word",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(24.dp))
+            IconButton(
+                onClick = { /* Placeholder - TTS in Story 1.4 */ },
+                modifier = Modifier.size(56.dp)
+            ) {
+                Icon(
+                    Icons.Default.Replay,
+                    contentDescription = "Repeat word",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Keyboard at bottom
+        SpellKeyboard(
+            onLetterClick = { letter ->
+                // Placeholder - actual gameplay logic in Story 1.4
+                typedLetters += letter
+            },
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
