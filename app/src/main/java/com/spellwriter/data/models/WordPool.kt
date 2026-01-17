@@ -5,7 +5,17 @@ import java.util.Locale
 /**
  * Word pool for spell-writing game.
  * Provides word lists organized by star level and language.
+ *
  * Story 1.4: Core Word Gameplay
+ * Story 2.2: Progressive Difficulty System
+ *
+ * WORD DISTRIBUTION REQUIREMENTS (per PRD FR5.1, FR5.2, FR5.3):
+ * - Star 1: 10 x 3-letter words + 10 x 4-letter words (20 total)
+ * - Star 2: 10 x 4-letter words + 10 x 5-letter words (20 total)
+ * - Star 3: 10 x 5-letter words + 10 x 6-letter words (20 total)
+ *
+ * Each star level provides progressive difficulty with longer words.
+ * Words are shuffled within length groups but maintain difficulty order (short→long).
  */
 object WordPool {
     // German word lists
@@ -51,6 +61,52 @@ object WordPool {
         // 6-letter words (10)
         "RABBIT", "GARDEN", "CHEESE", "FLOWER", "WINDOW", "BUTTER", "CIRCLE", "SQUARE", "PENCIL", "BASKET"
     )
+
+    // Story 2.2: Init-time validation ensures word pool integrity
+    init {
+        validateWordPool()
+    }
+
+    /**
+     * Validates that all word lists conform to the required distribution.
+     * Story 2.2 (AC1, AC2, AC3): Ensures data integrity at initialization.
+     *
+     * @throws IllegalStateException if any word list has incorrect distribution
+     */
+    fun validateWordPool() {
+        validateWordList("German Star 1", germanStar1, 3 to 10, 4 to 10)
+        validateWordList("German Star 2", germanStar2, 4 to 10, 5 to 10)
+        validateWordList("German Star 3", germanStar3, 5 to 10, 6 to 10)
+        validateWordList("English Star 1", englishStar1, 3 to 10, 4 to 10)
+        validateWordList("English Star 2", englishStar2, 4 to 10, 5 to 10)
+        validateWordList("English Star 3", englishStar3, 5 to 10, 6 to 10)
+    }
+
+    private fun validateWordList(
+        name: String,
+        words: List<String>,
+        shortRequirement: Pair<Int, Int>,
+        longRequirement: Pair<Int, Int>
+    ) {
+        val (shortLength, shortCount) = shortRequirement
+        val (longLength, longCount) = longRequirement
+
+        val shortWords = words.filter { it.length == shortLength }
+        val longWords = words.filter { it.length == longLength }
+
+        check(words.size == shortCount + longCount) {
+            "$name: Expected ${shortCount + longCount} words, got ${words.size}"
+        }
+        check(shortWords.size == shortCount) {
+            "$name: Expected $shortCount $shortLength-letter words, got ${shortWords.size}"
+        }
+        check(longWords.size == longCount) {
+            "$name: Expected $longCount $longLength-letter words, got ${longWords.size}"
+        }
+        check(words.all { it == it.uppercase() }) {
+            "$name: All words must be uppercase"
+        }
+    }
 
     /**
      * Get words for specified star level and language.
