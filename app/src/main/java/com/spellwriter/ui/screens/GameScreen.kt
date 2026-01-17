@@ -11,19 +11,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.Grimoire
 import com.spellwriter.ui.components.SpellKeyboard
 import com.spellwriter.ui.components.StarProgress
+import com.spellwriter.viewmodel.GameViewModel
 
 /**
- * Game Screen with complete layout.
+ * Game Screen with complete layout and gameplay logic.
  * Story 1.1: Basic stub for navigation testing.
- * Story 1.2: Accepts starNumber and isReplaySession parameters for future word selection.
+ * Story 1.2: Accepts starNumber and isReplaySession parameters for word selection.
  * Story 1.3: Complete functional layout with all UI components.
+ * Story 1.4: Integrated GameViewModel for complete gameplay (AC: All)
+ * Story 1.5: Added ghost expression and speaking state management (AC2, AC3, AC4, AC6)
+ * Story 2.1: Added session completion detection and callback trigger (AC6)
  *
  * @param starNumber The star level (1, 2, or 3) to play (Story 1.2)
  * @param isReplaySession If true, don't update progress when completing (Story 1.2)
@@ -39,11 +43,27 @@ fun GameScreen(
     onStarComplete: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    // Placeholder state - actual game logic comes in Story 1.4
-    var wordsCompleted by remember { mutableStateOf(0) }
-    var ghostExpression by remember { mutableStateOf(GhostExpression.NEUTRAL) }
-    var typedLetters by remember { mutableStateOf("") }
-    var sessionStars by remember { mutableStateOf(0) }  // Always 0 until Story 2.4
+    // Story 1.4: GameViewModel integration with TTS and gameplay logic
+    val context = LocalContext.current
+    val viewModel = remember {
+        GameViewModel(
+            context = context,
+            starNumber = starNumber,
+            isReplaySession = isReplaySession
+        )
+    }
+    val gameState by viewModel.gameState.collectAsState()
+
+    // Story 1.5: Ghost expression and speaking state (AC2, AC3, AC4, AC6)
+    val ghostExpression by viewModel.ghostExpression.collectAsState()
+    val isSpeaking by viewModel.isSpeaking.collectAsState()
+
+    // Story 2.1: Trigger star completion callback when session completes (AC6)
+    LaunchedEffect(gameState.sessionComplete) {
+        if (gameState.sessionComplete) {
+            onStarComplete?.invoke(starNumber)
+        }
+    }
 
     Column(
         modifier = modifier
@@ -58,16 +78,17 @@ fun GameScreen(
         ) {
             // Progress indicator
             Column(modifier = Modifier.weight(1f)) {
-                Text("$wordsCompleted/20", fontSize = 16.sp)
+                Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
                 LinearProgressIndicator(
-                    progress = (wordsCompleted / 20f).coerceIn(0f, 1f),
+                    progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            // Ghost in top-right
+            // Story 1.5: Ghost with expression and speaking animation (AC2, AC3, AC4, AC6)
             Ghost(
                 expression = ghostExpression,
+                isSpeaking = isSpeaking,
                 modifier = Modifier.size(80.dp)
             )
         }
@@ -80,27 +101,27 @@ fun GameScreen(
         ) {
             // Left side: Session stars
             StarProgress(
-                earnedStars = sessionStars,
+                earnedStars = gameState.sessionStars,
                 modifier = Modifier.padding(end = 8.dp)
             )
 
             // Center: Grimoire
             Grimoire(
-                typedLetters = typedLetters,
+                typedLetters = gameState.typedLetters,
                 modifier = Modifier.weight(1f)
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Audio control buttons
+        // Audio control buttons (AC1, AC2)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = { /* Placeholder - TTS in Story 1.4 */ },
+                onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
                 modifier = Modifier.size(56.dp)
             ) {
                 Icon(
@@ -111,7 +132,7 @@ fun GameScreen(
             }
             Spacer(modifier = Modifier.width(24.dp))
             IconButton(
-                onClick = { /* Placeholder - TTS in Story 1.4 */ },
+                onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
                 modifier = Modifier.size(56.dp)
             ) {
                 Icon(
@@ -124,11 +145,11 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Keyboard at bottom
+        // Keyboard at bottom (AC3, AC4)
         SpellKeyboard(
             onLetterClick = { letter ->
-                // Placeholder - actual gameplay logic in Story 1.4
-                typedLetters += letter
+                // Story 1.4: Integrated gameplay logic
+                viewModel.onLetterTyped(letter[0])
             },
             modifier = Modifier.fillMaxWidth()
         )

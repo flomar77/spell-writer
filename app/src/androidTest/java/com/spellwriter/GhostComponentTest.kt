@@ -109,4 +109,42 @@ class GhostComponentTest {
             .onNodeWithContentDescription("Ghost character with dead expression")
             .assertExists()
     }
+
+    // Story 1.5: TTS-synchronized animation tests
+
+    @Test
+    fun ghost_acceptsIsSpeakingParameter() {
+        // Arrange & Act - Test that isSpeaking parameter is accepted
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                Ghost(
+                    expression = GhostExpression.NEUTRAL,
+                    isSpeaking = false
+                )
+            }
+        }
+
+        // Assert - Ghost still displays correctly
+        composeTestRule
+            .onNodeWithContentDescription("Ghost character with neutral expression")
+            .assertExists()
+    }
+
+    @Test
+    fun ghost_whileSpeaking_stillDisplaysCorrectExpression() {
+        // Arrange & Act - Test that isSpeaking doesn't interfere with expression
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                Ghost(
+                    expression = GhostExpression.HAPPY,
+                    isSpeaking = true
+                )
+            }
+        }
+
+        // Assert - Expression is still correct while speaking
+        composeTestRule
+            .onNodeWithContentDescription("Ghost character with happy expression")
+            .assertExists()
+    }
 }

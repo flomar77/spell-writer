@@ -11,8 +11,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * UI tests for SpellKeyboard component (Story 1.3).
- * Tests QWERTY keyboard layout, touch targets, and letter click handling.
+ * UI tests for SpellKeyboard component (Story 1.5).
+ * Tests alphabetical keyboard layout, touch targets, and letter click handling.
  */
 @RunWith(AndroidJUnit4::class)
 class SpellKeyboardTest {
@@ -26,30 +26,30 @@ class SpellKeyboardTest {
             SpellKeyboard(onLetterClick = {})
         }
 
-        // Verify all 26 letters are present
-        "QWERTYUIOPASDFGHJKLZXCVBNM".forEach { letter ->
+        // Verify all 26 letters are present (A-Z)
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".forEach { letter ->
             composeTestRule.onNodeWithText(letter.toString()).assertExists()
         }
     }
 
     @Test
-    fun keyboard_hasCorrectQWERTYLayout() {
+    fun keyboard_hasCorrectAlphabeticalLayout() {
         composeTestRule.setContent {
             SpellKeyboard(onLetterClick = {})
         }
 
-        // Row 1: QWERTYUIOP
-        "QWERTYUIOP".forEach { letter ->
+        // Row 1: ABCDEFGHI (9 keys)
+        "ABCDEFGHI".forEach { letter ->
             composeTestRule.onNodeWithText(letter.toString()).assertExists()
         }
 
-        // Row 2: ASDFGHJKL
-        "ASDFGHJKL".forEach { letter ->
+        // Row 2: JKLMNOPQR (9 keys)
+        "JKLMNOPQR".forEach { letter ->
             composeTestRule.onNodeWithText(letter.toString()).assertExists()
         }
 
-        // Row 3: ZXCVBNM
-        "ZXCVBNM".forEach { letter ->
+        // Row 3: STUVWXYZ (8 keys)
+        "STUVWXYZ".forEach { letter ->
             composeTestRule.onNodeWithText(letter.toString()).assertExists()
         }
     }
@@ -75,18 +75,18 @@ class SpellKeyboardTest {
             SpellKeyboard(onLetterClick = {})
         }
 
-        // Test first key (Q) meets minimum 48dp size
-        composeTestRule.onNodeWithText("Q")
+        // Test first key (A) meets minimum 48dp size
+        composeTestRule.onNodeWithText("A")
             .assertHeightIsAtLeast(48.dp)
             .assertWidthIsAtLeast(48.dp)
 
-        // Test middle key (F)
-        composeTestRule.onNodeWithText("F")
-            .assertHeightIsAtLeast(48.dp)
-            .assertWidthIsAtLeast(48.dp)
-
-        // Test last key (M)
+        // Test middle key (M)
         composeTestRule.onNodeWithText("M")
+            .assertHeightIsAtLeast(48.dp)
+            .assertWidthIsAtLeast(48.dp)
+
+        // Test last key (Z)
+        composeTestRule.onNodeWithText("Z")
             .assertHeightIsAtLeast(48.dp)
             .assertWidthIsAtLeast(48.dp)
     }
@@ -123,8 +123,8 @@ class SpellKeyboardTest {
             SpellKeyboard(onLetterClick = { clickCount++ })
         }
 
-        // Click each letter once
-        "QWERTYUIOPASDFGHJKLZXCVBNM".forEach { letter ->
+        // Click each letter once (A-Z)
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".forEach { letter ->
             composeTestRule.onNodeWithText(letter.toString()).performClick()
         }
 
