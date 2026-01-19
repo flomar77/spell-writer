@@ -1,5 +1,6 @@
 package com.spellwriter.ui.screens
 
+import LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
+        LanguageSwitcher()
         // App Title
         Text(
             text = stringResource(R.string.home_title),

@@ -1,5 +1,5 @@
 package com.spellwriter.ui.screens
-
+import LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -83,93 +83,94 @@ fun GameScreen(
     Box(modifier = modifier.fillMaxSize()) {
         // Base game UI
         Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Top row: Progress bar + Ghost
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            // Progress indicator
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
-                LinearProgressIndicator(
-                    progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
-                    modifier = Modifier.fillMaxWidth()
+            // Top row: Progress bar + Ghost
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LanguageSwitcher()
+                // Progress indicator
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
+                    LinearProgressIndicator(
+                        progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                // Story 1.5: Ghost with expression and speaking animation (AC2, AC3, AC4, AC6)
+                Ghost(
+                    expression = ghostExpression,
+                    isSpeaking = isSpeaking,
+                    modifier = Modifier.size(80.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            // Story 1.5: Ghost with expression and speaking animation (AC2, AC3, AC4, AC6)
-            Ghost(
-                expression = ghostExpression,
-                isSpeaking = isSpeaking,
-                modifier = Modifier.size(80.dp)
-            )
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Main content area with stars and grimoire
-        Row(
-            modifier = Modifier.weight(1f)
-        ) {
-            // Left side: Session stars
-            StarProgress(
-                earnedStars = gameState.sessionStars,
-                modifier = Modifier.padding(end = 8.dp)
-            )
-
-            // Center: Grimoire
-            Grimoire(
-                typedLetters = gameState.typedLetters,
+            // Main content area with stars and grimoire
+            Row(
                 modifier = Modifier.weight(1f)
+            ) {
+                // Left side: Session stars
+                StarProgress(
+                    earnedStars = gameState.sessionStars,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+
+                // Center: Grimoire
+                Grimoire(
+                    typedLetters = gameState.typedLetters,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Audio control buttons (AC1, AC2)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Play word",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(24.dp))
+                IconButton(
+                    onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Replay,
+                        contentDescription = "Repeat word",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Keyboard at bottom (AC3, AC4)
+            SpellKeyboard(
+                onLetterClick = { letter ->
+                    // Story 1.4: Integrated gameplay logic
+                    viewModel.onLetterTyped(letter[0])
+                },
+                modifier = Modifier.fillMaxWidth()
             )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Audio control buttons (AC1, AC2)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = "Play word",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(24.dp))
-            IconButton(
-                onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    Icons.Default.Replay,
-                    contentDescription = "Repeat word",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Keyboard at bottom (AC3, AC4)
-        SpellKeyboard(
-            onLetterClick = { letter ->
-                // Story 1.4: Integrated gameplay logic
-                viewModel.onLetterTyped(letter[0])
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
         }
 
         // Story 2.4: Celebration overlay (AC1, AC2, AC3, AC4, AC6, AC7)

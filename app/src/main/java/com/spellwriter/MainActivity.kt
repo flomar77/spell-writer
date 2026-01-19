@@ -1,5 +1,6 @@
 package com.spellwriter
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -60,6 +61,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
+    // Recreate the activity to apply the new locale
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        recreate()
+    }
 }
 
 /**
@@ -90,6 +98,7 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
                 }
             )
         }
+
         is Screen.Game -> {
             GameScreen(
                 starNumber = selectedStar ?: progress.getCurrentStar(),  // Story 1.2
