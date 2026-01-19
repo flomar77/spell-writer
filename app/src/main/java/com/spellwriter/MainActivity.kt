@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.lifecycleScope
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.WordPool
 import com.spellwriter.data.repository.ProgressRepository
@@ -19,7 +18,6 @@ import com.spellwriter.data.repository.WordsRepository
 import com.spellwriter.ui.screens.GameScreen
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
-import kotlinx.coroutines.launch
 
 /**
  * MainActivity for Stories 1.1, 1.2, and 2.3 - Navigation and progress management.
