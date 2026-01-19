@@ -8,28 +8,48 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.lifecycleScope
 import com.spellwriter.data.models.Progress
+import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.ui.screens.GameScreen
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
+import kotlinx.coroutines.launch
 
 /**
- * MainActivity for Stories 1.1 & 1.2 - Navigation and progress management.
+ * MainActivity for Stories 1.1, 1.2, and 2.3 - Navigation and progress management.
  * Story 1.1: Basic screen navigation between Home and Game screens.
  * Story 1.2: Adds Progress state management and star replay functionality.
- * No ViewModel yet - just state management with mutableStateOf.
+ * Story 2.3: Adds DataStore persistence and lifecycle-aware saving.
  */
 class MainActivity : ComponentActivity() {
 
+    // Story 2.3: ProgressRepository for persistence (AC4, AC6)
+    private lateinit var progressRepository: ProgressRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Story 2.3: Initialize repository (AC4)
+        progressRepository = ProgressRepository(this)
+
+        // Story 2.3: Add lifecycle observer for persistence (AC6, NFR3.2)
+        lifecycle.addObserver(LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                // Save will be called from GameScreen/ViewModel if active
+                // This is handled in Task 6
+            }
+        })
+
         setContent {
             SpellWriterTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    SpellWriterApp()
+                    SpellWriterApp(progressRepository)
                 }
             }
         }
@@ -40,17 +60,20 @@ class MainActivity : ComponentActivity() {
  * Main app composable that handles navigation and progress state.
  * Story 1.1: Simple sealed class navigation.
  * Story 1.2: Adds Progress and selectedStar state management for star replay.
+ * Story 2.3: Loads progress from DataStore and persists star completion (AC4, AC5).
  */
 @Composable
-fun SpellWriterApp() {
+fun SpellWriterApp(progressRepository: ProgressRepository) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
-    var progress by remember { mutableStateOf(Progress()) }  // Story 1.2
     var selectedStar by remember { mutableStateOf<Int?>(null) }  // Story 1.2: for replay
+
+    // Story 2.3: Load progress from repository (AC4, NFR3.3)
+    val progress by progressRepository.progressFlow.collectAsState(initial = Progress())
 
     when (currentScreen) {
         is Screen.Home -> {
             HomeScreen(
-                progress = progress,  // Story 1.2
+                progress = progress,  // Story 1.2, 2.3
                 onPlayClick = {
                     selectedStar = null  // Auto-select current star
                     currentScreen = Screen.Game
@@ -65,18 +88,14 @@ fun SpellWriterApp() {
             GameScreen(
                 starNumber = selectedStar ?: progress.getCurrentStar(),  // Story 1.2
                 isReplaySession = selectedStar != null,  // Story 1.2
+                progressRepository = progressRepository,  // Story 2.3
+                currentProgress = progress,  // Story 2.3
                 onBackPress = {
                     currentScreen = Screen.Home
                 },
-                onStarComplete = { completedStar ->  // Story 1.2
-                    // Update progress when star completed (only if not replay)
-                    if (selectedStar == null) {
-                        // Validate completedStar is in valid range (1-3)
-                        val validatedStar = completedStar.coerceIn(1, 3)
-                        progress = progress.copy(
-                            wizardStars = maxOf(progress.wizardStars, validatedStar)
-                        )
-                    }
+                onStarComplete = { completedStar ->  // Story 1.2, 2.3
+                    // Star completion now handled by GameViewModel persistence
+                    // Just navigate back to home
                     currentScreen = Screen.Home
                 }
             )

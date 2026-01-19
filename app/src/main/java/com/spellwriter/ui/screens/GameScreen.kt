@@ -14,6 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spellwriter.data.models.Progress
+import com.spellwriter.data.repository.ProgressRepository
+import com.spellwriter.ui.components.CelebrationSequence
 import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.Grimoire
 import com.spellwriter.ui.components.SpellKeyboard
@@ -28,9 +31,12 @@ import com.spellwriter.viewmodel.GameViewModel
  * Story 1.4: Integrated GameViewModel for complete gameplay (AC: All)
  * Story 1.5: Added ghost expression and speaking state management (AC2, AC3, AC4, AC6)
  * Story 2.1: Added session completion detection and callback trigger (AC6)
+ * Story 2.3: Added ProgressRepository integration for persistence (AC2, AC4)
  *
  * @param starNumber The star level (1, 2, or 3) to play (Story 1.2)
  * @param isReplaySession If true, don't update progress when completing (Story 1.2)
+ * @param progressRepository Repository for persisting progress (Story 2.3)
+ * @param currentProgress Current progress state (Story 2.3)
  * @param onBackPress Callback for back navigation
  * @param onStarComplete Callback when star is completed, passes completed star number (Story 1.2)
  * @param modifier Optional modifier for the screen
@@ -39,17 +45,21 @@ import com.spellwriter.viewmodel.GameViewModel
 fun GameScreen(
     starNumber: Int = 1,
     isReplaySession: Boolean = false,
+    progressRepository: ProgressRepository? = null,
+    currentProgress: Progress = Progress(),
     onBackPress: () -> Unit = {},
     onStarComplete: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    // Story 1.4: GameViewModel integration with TTS and gameplay logic
+    // Story 1.4, 2.3: GameViewModel integration with TTS and gameplay logic + persistence
     val context = LocalContext.current
-    val viewModel = remember {
+    val viewModel = remember(starNumber, isReplaySession) {
         GameViewModel(
             context = context,
             starNumber = starNumber,
-            isReplaySession = isReplaySession
+            isReplaySession = isReplaySession,
+            progressRepository = progressRepository,
+            initialProgress = currentProgress
         )
     }
     val gameState by viewModel.gameState.collectAsState()
@@ -58,14 +68,21 @@ fun GameScreen(
     val ghostExpression by viewModel.ghostExpression.collectAsState()
     val isSpeaking by viewModel.isSpeaking.collectAsState()
 
-    // Story 2.1: Trigger star completion callback when session completes (AC6)
+    // Story 2.4: Celebration state (AC6, AC7)
+    val showCelebration by viewModel.showCelebration.collectAsState()
+    val celebrationStarLevel by viewModel.celebrationStarLevel.collectAsState()
+
+    // Story 2.1, 2.3: Trigger star completion callback when session completes (AC6)
     LaunchedEffect(gameState.sessionComplete) {
         if (gameState.sessionComplete) {
             onStarComplete?.invoke(starNumber)
         }
     }
 
-    Column(
+    // Story 2.4: Wrap content in Box for celebration overlay (AC6, AC7)
+    Box(modifier = modifier.fillMaxSize()) {
+        // Base game UI
+        Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
@@ -152,6 +169,14 @@ fun GameScreen(
                 viewModel.onLetterTyped(letter[0])
             },
             modifier = Modifier.fillMaxWidth()
+        )
+        }
+
+        // Story 2.4: Celebration overlay (AC1, AC2, AC3, AC4, AC6, AC7)
+        CelebrationSequence(
+            showCelebration = showCelebration,
+            starLevel = celebrationStarLevel,
+            onCelebrationComplete = { viewModel.onCelebrationComplete() }
         )
     }
 }

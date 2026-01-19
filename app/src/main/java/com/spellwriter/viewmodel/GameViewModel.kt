@@ -9,7 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.SoundManager
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
+import com.spellwriter.data.models.Progress
+import com.spellwriter.data.models.WordPerformance
 import com.spellwriter.data.models.WordPool
+import com.spellwriter.data.repository.ProgressRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,15 +28,20 @@ import java.util.Locale
  * Story 1.4: Core Word Gameplay
  * Story 1.5: Ghost expression management with auto-reset and TTS speaking state
  * Story 2.1: 20-word learning sessions with retry logic and session completion
+ * Story 2.3: Progress persistence and word performance tracking
  *
  * @param context Application context for TTS and SoundManager
  * @param starNumber Star level (1, 2, or 3) determining word difficulty
  * @param isReplaySession If true, don't update progress (Story 1.2)
+ * @param progressRepository Repository for persisting progress (Story 2.3)
+ * @param initialProgress Initial progress state (Story 2.3)
  */
 class GameViewModel(
     private val context: Context,
     private val starNumber: Int = 1,
-    private val isReplaySession: Boolean = false
+    private val isReplaySession: Boolean = false,
+    private val progressRepository: ProgressRepository? = null,
+    private val initialProgress: Progress = Progress()
 ) : ViewModel() {
 
     // Game state exposed to UI
@@ -51,8 +59,21 @@ class GameViewModel(
     // Story 1.5: Job for expression auto-reset (AC6)
     private var expressionResetJob: Job? = null
 
+    // Story 2.4: Celebration state management (AC7)
+    private val _showCelebration = MutableStateFlow(false)
+    val showCelebration: StateFlow<Boolean> = _showCelebration.asStateFlow()
+
+    private val _celebrationStarLevel = MutableStateFlow(0)
+    val celebrationStarLevel: StateFlow<Int> = _celebrationStarLevel.asStateFlow()
+
     // Story 2.1: Internal tracking for session management (AC3, AC5)
     private val completedWords = mutableSetOf<String>()
+
+    // Story 2.3: Word performance tracking (AC3, AC7)
+    private val wordPerformanceData = mutableMapOf<String, WordPerformance>()
+    private var currentWordStartTime: Long = 0L
+    private var currentWordAttempts: Int = 0
+    private var currentWordIncorrectAttempts: Int = 0
 
     // Audio components
     private var tts: TextToSpeech? = null
@@ -109,6 +130,7 @@ class GameViewModel(
      * Initializes word pool and sets first word.
      * Story 1.5: Ghost expression now managed separately
      * Story 2.1: Initializes session tracking with 20 words in difficulty order (AC1, AC2)
+     * Story 2.3: Initialize performance tracking (AC3, AC7)
      * AC5: Word loading from pool
      */
     private fun loadWordsForStar() {
@@ -117,6 +139,10 @@ class GameViewModel(
 
         // Story 2.1: Initialize session tracking
         completedWords.clear()
+
+        // Story 2.3: Initialize performance tracking (AC3, AC7)
+        wordPerformanceData.clear()
+        startWordTracking(words.firstOrNull() ?: "")
 
         _gameState.update {
             it.copy(
@@ -135,6 +161,31 @@ class GameViewModel(
         _ghostExpression.value = GhostExpression.NEUTRAL
 
         Log.d(TAG, "Loaded ${words.size} words for star $starNumber, language: $language")
+    }
+
+    /**
+     * Story 2.3: Start tracking performance for a new word (AC3, AC7).
+     */
+    private fun startWordTracking(word: String) {
+        currentWordStartTime = System.currentTimeMillis()
+        currentWordAttempts = 0
+        currentWordIncorrectAttempts = 0
+    }
+
+    /**
+     * Story 2.3: Save word performance data (AC3, AC7).
+     */
+    private fun saveWordPerformance(word: String, success: Boolean) {
+        val completionTime = System.currentTimeMillis() - currentWordStartTime
+        val performance = WordPerformance(
+            word = word,
+            attempts = currentWordAttempts,
+            incorrectAttempts = currentWordIncorrectAttempts,
+            completionTimeMs = completionTime,
+            success = success
+        )
+        wordPerformanceData[word] = performance
+        Log.d(TAG, "Word performance - $word: ${performance.getAccuracy()}% accuracy, ${completionTime}ms")
     }
 
     /**
@@ -218,11 +269,15 @@ class GameViewModel(
     /**
      * Handle correct letter input.
      * Story 1.5: Uses new expression management system (AC3)
+     * Story 2.3: Track attempt count for performance data (AC3, AC7)
      * AC3: Correct letter feedback (animation, sound, happy ghost)
      * NFR1.3: Feedback within 100ms
      */
     private fun handleCorrectLetter(letter: Char) {
         Log.d(TAG, "Correct letter: $letter")
+
+        // Story 2.3: Track correct attempt (AC3, AC7)
+        currentWordAttempts++
 
         // Update state immediately for responsive feedback (NFR1.3)
         _gameState.update {
@@ -244,11 +299,16 @@ class GameViewModel(
     /**
      * Handle incorrect letter input.
      * Story 1.5: Uses new expression management system (AC4)
+     * Story 2.3: Track incorrect attempt count for performance data (AC3, AC7)
      * AC4: Incorrect letter feedback (wobble animation, error sound, unhappy ghost)
      * NFR1.3: Feedback within 100ms
      */
     private fun handleIncorrectLetter(letter: Char) {
         Log.d(TAG, "Incorrect letter: $letter (expected: ${_gameState.value.currentWord[_gameState.value.typedLetters.length]})")
+
+        // Story 2.3: Track incorrect attempt (AC3, AC7)
+        currentWordAttempts++
+        currentWordIncorrectAttempts++
 
         // AC4: Set unhappy expression with auto-reset (Story 1.5)
         setGhostExpression(GhostExpression.UNHAPPY)
@@ -299,12 +359,16 @@ class GameViewModel(
      * Handle word completion and progression to next word.
      * Story 1.5: Ghost expression now managed separately
      * Story 2.1: Enhanced with session tracking and completion detection (AC4, AC6)
+     * Story 2.3: Save performance data and persist progress (AC2, AC3, AC4, AC7)
      * AC5: Word completion and progression
      * NFR1.4: Animations run at 60fps
      */
     private fun onWordCompleted() {
         val currentWord = _gameState.value.currentWord
         Log.d(TAG, "Word completed: $currentWord")
+
+        // Story 2.3: Save word performance data (AC3, AC7)
+        saveWordPerformance(currentWord, success = true)
 
         // Story 2.1: Track completed word (AC4)
         completedWords.add(currentWord)
@@ -313,7 +377,7 @@ class GameViewModel(
         // Story 2.1: Remove from failed words if it was a retry (AC5)
         val updatedFailedWords = _gameState.value.failedWords.filter { it != currentWord }
 
-        // Story 2.1: Check session completion FIRST (AC6)
+        // Story 2.1, 2.3: Check session completion FIRST (AC6)
         if (newWordsCompleted >= 20) {
             Log.d(TAG, "Session complete - all 20 unique words finished")
             _gameState.update {
@@ -325,15 +389,39 @@ class GameViewModel(
                     failedWords = emptyList()
                 )
             }
+
+            // Story 2.3: Save progress immediately after star completion (AC2, AC4, NFR3.1)
+            if (!isReplaySession && progressRepository != null) {
+                viewModelScope.launch {
+                    try {
+                        val updatedProgress = initialProgress.earnStar(starNumber)
+                        progressRepository.saveProgress(updatedProgress)
+                        progressRepository.clearSessionState()
+                        Log.d(TAG, "Progress saved - Star $starNumber earned")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to save progress", e)
+                    }
+                }
+            }
+
             // Story 1.5: Show happy expression on session completion
             setGhostExpression(GhostExpression.HAPPY)
-            // Story 2.4 handles session completion celebrations
+
+            // Story 2.4: Trigger celebration after save (AC7)
+            _celebrationStarLevel.value = starNumber
+            _showCelebration.value = true
+            Log.d(TAG, "Celebration triggered for star $starNumber")
             return
         }
 
         // Story 2.1: Get next word from remaining pool (AC4)
         val currentRemaining = _gameState.value.remainingWords
         val nextWord = currentRemaining.firstOrNull()
+
+        // Story 2.3: Start tracking next word (AC3, AC7)
+        if (nextWord != null) {
+            startWordTracking(nextWord)
+        }
 
         // Update state with progression
         _gameState.update {
@@ -344,6 +432,17 @@ class GameViewModel(
                 remainingWords = currentRemaining.drop(1),
                 failedWords = updatedFailedWords
             )
+        }
+
+        // Story 2.3: Save session state after each word (AC6, NFR3.1)
+        if (progressRepository != null) {
+            viewModelScope.launch {
+                try {
+                    progressRepository.saveSessionState(starNumber, newWordsCompleted)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to save session state", e)
+                }
+            }
         }
 
         // Story 1.5: Show happy expression on word completion
@@ -426,6 +525,17 @@ class GameViewModel(
             // Insert before first longer word
             words.toMutableList().apply { add(insertIndex, word) }
         }
+    }
+
+    /**
+     * Story 2.4: Handle celebration sequence completion (AC7).
+     * Called when all celebration animations finish.
+     * Returns to normal state where user can continue or return to home.
+     */
+    fun onCelebrationComplete() {
+        _showCelebration.value = false
+        _celebrationStarLevel.value = 0
+        Log.d(TAG, "Celebration complete - returned to normal state")
     }
 
     /**

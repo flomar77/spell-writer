@@ -64,4 +64,64 @@ data class Progress(
             World.PIRATE -> star <= pirateStars
         }
     }
+
+    /**
+     * Story 2.3: Returns a new Progress with the specified star earned.
+     * Used when a session completes successfully to update progress immutably.
+     *
+     * AC2, AC4: Star achievement recording and persistence
+     *
+     * @param star The star number that was earned (1, 2, or 3)
+     * @return New Progress instance with the star earned
+     * @throws IllegalArgumentException if star is not in valid range or already earned
+     */
+    fun earnStar(star: Int): Progress {
+        require(star in 1..3) { "star must be between 1 and 3, got: $star" }
+        require(!isStarEarned(star)) { "star $star already earned in $currentWorld world" }
+
+        return when (currentWorld) {
+            World.WIZARD -> {
+                require(star == wizardStars + 1) { "Must earn stars in order. Current: $wizardStars, trying to earn: $star" }
+                copy(wizardStars = wizardStars + 1)
+            }
+            World.PIRATE -> {
+                require(star == pirateStars + 1) { "Must earn stars in order. Current: $pirateStars, trying to earn: $star" }
+                copy(pirateStars = pirateStars + 1)
+            }
+        }
+    }
+
+    /**
+     * Story 2.4: Check if a world is complete (all 3 stars earned).
+     * AC5: World unlocking foundation
+     *
+     * @param world The world to check
+     * @return true if all 3 stars have been earned in the world
+     */
+    fun isWorldComplete(world: World): Boolean {
+        return when (world) {
+            World.WIZARD -> wizardStars == 3
+            World.PIRATE -> pirateStars == 3
+        }
+    }
+
+    /**
+     * Story 2.4: Check if the next world should unlock.
+     * AC5: World unlocking foundation
+     *
+     * @return true if the current world is complete and next world is ready
+     */
+    fun isNextWorldReady(): Boolean {
+        return isWorldComplete(currentWorld)
+    }
+
+    /**
+     * Story 2.4: Get total stars earned across all worlds.
+     * AC5: World unlocking foundation
+     *
+     * @return Total number of stars earned (0-6)
+     */
+    fun getTotalStars(): Int {
+        return wizardStars + pirateStars
+    }
 }

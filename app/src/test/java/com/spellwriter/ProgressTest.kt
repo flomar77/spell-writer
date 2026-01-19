@@ -147,4 +147,57 @@ class ProgressTest {
         val progress = Progress(wizardStars = 1)
         progress.isStarEarned(4)
     }
+
+    // Story 2.4: World completion tests (AC5)
+
+    @Test
+    fun isWorldComplete_returnsTrueWhenThreeStarsEarned() {
+        val progressWizard = Progress(wizardStars = 3, currentWorld = World.WIZARD)
+        assertTrue(progressWizard.isWorldComplete(World.WIZARD))
+
+        val progressPirate = Progress(pirateStars = 3, currentWorld = World.PIRATE)
+        assertTrue(progressPirate.isWorldComplete(World.PIRATE))
+    }
+
+    @Test
+    fun isWorldComplete_returnsFalseWhenFewerThanThreeStars() {
+        val progress0 = Progress(wizardStars = 0)
+        assertFalse(progress0.isWorldComplete(World.WIZARD))
+
+        val progress1 = Progress(wizardStars = 1)
+        assertFalse(progress1.isWorldComplete(World.WIZARD))
+
+        val progress2 = Progress(wizardStars = 2)
+        assertFalse(progress2.isWorldComplete(World.WIZARD))
+    }
+
+    @Test
+    fun isNextWorldReady_returnsTrueWhenCurrentWorldComplete() {
+        val progress = Progress(wizardStars = 3, currentWorld = World.WIZARD)
+        assertTrue(progress.isNextWorldReady())
+    }
+
+    @Test
+    fun isNextWorldReady_returnsFalseWhenCurrentWorldIncomplete() {
+        val progress = Progress(wizardStars = 2, currentWorld = World.WIZARD)
+        assertFalse(progress.isNextWorldReady())
+    }
+
+    @Test
+    fun getTotalStars_sumsStarsFromAllWorlds() {
+        val progress = Progress(wizardStars = 2, pirateStars = 1)
+        assertEquals(3, progress.getTotalStars())
+    }
+
+    @Test
+    fun getTotalStars_returnsZeroWithNoStars() {
+        val progress = Progress(wizardStars = 0, pirateStars = 0)
+        assertEquals(0, progress.getTotalStars())
+    }
+
+    @Test
+    fun getTotalStars_returnsMaxWithAllStars() {
+        val progress = Progress(wizardStars = 3, pirateStars = 3)
+        assertEquals(6, progress.getTotalStars())
+    }
 }

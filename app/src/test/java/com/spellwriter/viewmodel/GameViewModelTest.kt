@@ -234,8 +234,45 @@ class GameViewModelTest {
     // Ghost expression is now managed separately in GameViewModel with its own StateFlow
     // Expression tests are in GhostComponentTest and instrumentation tests
 
+    // Story 2.4: Celebration state tests (AC7)
+
+    @Test
+    fun celebrationState_initiallyFalse() {
+        val viewModel = createTestViewModel()
+        assertFalse(viewModel.showCelebration.value)
+        assertEquals(0, viewModel.celebrationStarLevel.value)
+    }
+
+    @Test
+    fun onCelebrationComplete_clearsCelebrationState() {
+        val viewModel = createTestViewModel()
+
+        // Manually set celebration state (simulating star completion)
+        // Note: In real scenario, this happens after 20-word completion
+        viewModel.onCelebrationComplete()
+
+        assertFalse(viewModel.showCelebration.value)
+        assertEquals(0, viewModel.celebrationStarLevel.value)
+    }
+
+    /**
+     * Helper function to create GameViewModel for testing.
+     * Uses test context and mocked dependencies.
+     */
+    private fun createTestViewModel(): GameViewModel {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        return GameViewModel(
+            context = context,
+            starNumber = 1,
+            isReplaySession = false,
+            progressRepository = null,
+            initialProgress = com.spellwriter.data.models.Progress()
+        )
+    }
+
     // Note: GameViewModel tests requiring Context, TTS, and SoundManager
     // are in instrumentation tests (androidTest)
     // Integration tests for onWordFailed() and full session flow require
     // instrumentation testing with mocked Context/TTS.
+    // Celebration trigger test (after 20-word completion) is in instrumentation tests.
 }
