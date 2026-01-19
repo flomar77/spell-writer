@@ -4,6 +4,7 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import android.util.Log.d
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.SoundManager
@@ -14,7 +15,6 @@ import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.SavedSession
 import com.spellwriter.data.models.SessionState
 import com.spellwriter.data.models.WordPerformance
-import com.spellwriter.data.models.WordPool
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.data.repository.SessionRepository
 import com.spellwriter.data.repository.WordRepository
@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
+import java.util.Locale.GERMANY
+import java.util.Locale.US
 
 /**
  * ViewModel for game screen gameplay logic.
@@ -155,7 +157,17 @@ class GameViewModel(
      * @return Locale.GERMANY for German, Locale.US for English
      */
     private fun getTTSLocale(): Locale {
-        return WordRepository.getTTSLocale(_currentLanguage.value)
+        return when (_currentLanguage.value) {
+            AppLanguage.GERMAN -> {
+                d("WordRepository", "TTS locale: German (de-DE)")
+                GERMANY
+            }
+
+            AppLanguage.ENGLISH -> {
+                d("WordRepository", "TTS locale: English (en-US)")
+                US
+            }
+        }
     }
 
     /**

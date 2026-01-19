@@ -23,6 +23,17 @@ import java.util.Locale
 object WordRepository {
     private const val TAG = "WordRepository"
 
+    // Add WordsRepository instance
+    private var wordsRepository: WordsRepository? = null
+
+    /**
+     * Initialize the repository with context.
+     * This should be called before using getWordsForStar.
+     */
+    fun initialize(context: android.content.Context) {
+        wordsRepository = WordsRepository(context)
+    }
+
     /**
      * Detects device system language and maps to supported app languages.
      * Story 3.3 (AC1): Automatic language detection on app launch
@@ -52,10 +63,12 @@ object WordRepository {
                 Log.d(TAG, "Using German language mode")
                 AppLanguage.GERMAN
             }
+
             "en" -> {
                 Log.d(TAG, "Using English language mode")
                 AppLanguage.ENGLISH
             }
+
             else -> {
                 Log.d(TAG, "Unsupported language '$language', defaulting to English (FR8.9)")
                 AppLanguage.ENGLISH  // FR8.9: Default fallback
@@ -70,7 +83,7 @@ object WordRepository {
      * FR8.3: German word list (60 words across 3 stars)
      * FR8.4: English word list (60 words across 3 stars)
      *
-     * Delegates to WordPool with appropriate language code conversion.
+     * Delegates to WordsRepository with appropriate language code conversion.
      *
      * @param star Star level (1, 2, or 3)
      * @param language App language (defaults to system language if not specified)
@@ -84,11 +97,20 @@ object WordRepository {
 
         Log.d(TAG, "Loading words for star $star in $language mode")
 
-        val words = WordPool.getWordsForStar(star, langCode)
+        // First try to get from cache
+        val cachedWords = wordsRepository?.getCachedWords(star, langCode)
+        if (!cachedWords.isNullOrEmpty()) {
+            Log.d(TAG, "Using cached words for star $star ($language)")
+            return cachedWords
+        }
 
-        Log.d(TAG, "Loaded ${words.size} words for star $star ($language)")
-
-        return words
+        // If not in cache, fetch from API
+        val result = wordsRepository?.fetchAndCacheWords(star, langCode)
+        return result?.getOrElse { exception ->
+            Log.e(TAG, "Failed to get words for star $star ($language): ${exception.message}")
+            // Fallback to WordPool if API fails
+            WordPool.getWordsForStar(star, langCode)
+        } ?: WordPool.getWordsForStar(star, langCode)
     }
 
     /**
@@ -114,6 +136,7 @@ object WordRepository {
                 Log.d(TAG, "TTS locale: German (de-DE)")
                 Locale.GERMANY
             }
+
             AppLanguage.ENGLISH -> {
                 Log.d(TAG, "TTS locale: English (en-US)")
                 Locale.US

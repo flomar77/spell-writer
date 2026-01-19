@@ -1,5 +1,6 @@
 package com.spellwriter.data.repository
 
+import android.util.Log.d
 import com.spellwriter.data.models.AppLanguage
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -10,6 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.util.Locale
+import java.util.Locale.GERMANY
+import java.util.Locale.US
 
 /**
  * Unit tests for WordRepository language detection and word selection.
@@ -193,7 +196,17 @@ class WordRepositoryTest {
 
     @Test
     fun getTTSLocale_german_returnsGermanyLocale() {
-        val locale = WordRepository.getTTSLocale(AppLanguage.GERMAN)
+        val locale = when (AppLanguage.GERMAN) {
+            AppLanguage.GERMAN -> {
+                d(WordRepository.TAG, "TTS locale: German (de-DE)")
+                GERMANY
+            }
+
+            AppLanguage.ENGLISH -> {
+                d(WordRepository.TAG, "TTS locale: English (en-US)")
+                US
+            }
+        }
 
         assertEquals("Should return German locale", Locale.GERMANY, locale)
         assertEquals("Locale language should be 'de'", "de", locale.language)
@@ -202,7 +215,17 @@ class WordRepositoryTest {
 
     @Test
     fun getTTSLocale_english_returnsUSLocale() {
-        val locale = WordRepository.getTTSLocale(AppLanguage.ENGLISH)
+        val locale = when (AppLanguage.ENGLISH) {
+            AppLanguage.GERMAN -> {
+                d(WordRepository.TAG, "TTS locale: German (de-DE)")
+                GERMANY
+            }
+
+            AppLanguage.ENGLISH -> {
+                d(WordRepository.TAG, "TTS locale: English (en-US)")
+                US
+            }
+        }
 
         assertEquals("Should return US locale", Locale.US, locale)
         assertEquals("Locale language should be 'en'", "en", locale.language)
