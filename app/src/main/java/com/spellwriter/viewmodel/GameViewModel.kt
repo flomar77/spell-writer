@@ -82,7 +82,9 @@ class GameViewModel(
 
     init {
         initializeTTS()
-        loadWordsForStar()
+        viewModelScope.launch {
+            loadWordsForStar()
+        }
     }
 
     /**
@@ -133,7 +135,7 @@ class GameViewModel(
      * Story 2.3: Initialize performance tracking (AC3, AC7)
      * AC5: Word loading from pool
      */
-    private fun loadWordsForStar() {
+    private suspend fun loadWordsForStar() {
         val language = Locale.getDefault().language
         val words = WordPool.getWordsForStar(starNumber, language)
 

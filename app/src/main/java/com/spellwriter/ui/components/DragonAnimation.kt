@@ -144,7 +144,7 @@ private fun DrawScope.drawDragon(
 
     val leftWingPath = Path().apply {
         moveTo(position.x - size * 0.2f, position.y)
-        quadraticBezierTo(
+        quadraticTo(
             position.x - size * 0.6f, position.y - wingHeight,
             position.x - size * 0.4f, position.y - size * 0.2f
         )
@@ -153,7 +153,7 @@ private fun DrawScope.drawDragon(
 
     val rightWingPath = Path().apply {
         moveTo(position.x + size * 0.2f, position.y)
-        quadraticBezierTo(
+        quadraticTo(
             position.x + size * 0.6f, position.y - wingHeight,
             position.x + size * 0.4f, position.y - size * 0.2f
         )

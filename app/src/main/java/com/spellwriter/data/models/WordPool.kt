@@ -1,5 +1,8 @@
 package com.spellwriter.data.models
 
+import android.util.Log
+import com.spellwriter.data.repository.WordsRepository
+import kotlinx.coroutines.withTimeout
 import java.util.Locale
 
 /**
@@ -16,8 +19,17 @@ import java.util.Locale
  *
  * Each star level provides progressive difficulty with longer words.
  * Words are shuffled within length groups but maintain difficulty order (short→long).
+ *
+ * Word sources:
+ * 1. Cached words from API (30-day TTL)
+ * 2. Fresh API fetch (if cache miss)
+ * 3. Static fallback words (if API fails)
  */
 object WordPool {
+    private const val TAG = "WordPool"
+    private const val API_TIMEOUT_MS = 5000L
+
+    lateinit var repository: WordsRepository
     // German word lists
     private val germanStar1 = listOf(
         // 3-letter words (10)
@@ -113,30 +125,77 @@ object WordPool {
      * Story 2.1: Returns words in difficulty order (shorter words first, then longer words)
      * with shuffling within each length group for variety while maintaining progression.
      *
+     * Word loading strategy:
+     * 1. Try cached words from repository
+     * 2. If cache miss, try API fetch (with timeout)
+     * 3. If API fails, use static fallback words
+     *
      * @param starNumber Star level (1, 2, or 3). Defaults to 1 if invalid.
      * @param language Language code ("de" for German, "en" for English). Defaults to device locale.
      * @return List of 20 words ordered by difficulty (short→long) with randomization within groups.
      */
-    fun getWordsForStar(starNumber: Int, language: String = Locale.getDefault().language): List<String> {
-        val wordList = when {
-            language.startsWith("de") -> when (starNumber) {
+    suspend fun getWordsForStar(starNumber: Int, language: String = Locale.getDefault().language): List<String> {
+        val lang = if (language.startsWith("de")) "de" else "en"
+
+        // Try cached words first
+        if (::repository.isInitialized) {
+            val cachedWords = repository.getCachedWords(starNumber, lang)
+            if (cachedWords != null && cachedWords.size >= 20) {
+                Log.d(TAG, "Using cached words for star $starNumber ($lang)")
+                return shuffleByLength(cachedWords)
+            }
+
+            // Cache miss - try API fetch with timeout
+            try {
+                withTimeout(API_TIMEOUT_MS) {
+                    val result = repository.fetchAndCacheWords(starNumber, lang)
+                    if (result.isSuccess) {
+                        val words = result.getOrNull()
+                        if (words != null && words.size >= 20) {
+                            Log.i(TAG, "Using fresh API words for star $starNumber ($lang)")
+                            return@withTimeout shuffleByLength(words)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "API fetch failed for star $starNumber ($lang): ${e.message}")
+            }
+        }
+
+        // Fallback to static words
+        Log.i(TAG, "Using static fallback words for star $starNumber ($lang)")
+        val wordList = getStaticWords(starNumber, lang)
+        return shuffleByLength(wordList)
+    }
+
+    /**
+     * Get static fallback words for a star level and language.
+     */
+    private fun getStaticWords(starNumber: Int, lang: String): List<String> {
+        return when (lang) {
+            "de" -> when (starNumber) {
                 1 -> germanStar1
                 2 -> germanStar2
                 3 -> germanStar3
-                else -> germanStar1  // Default to star 1 for invalid star numbers
+                else -> germanStar1
             }
-            else -> when (starNumber) {  // English or other languages default to English
+            else -> when (starNumber) {
                 1 -> englishStar1
                 2 -> englishStar2
                 3 -> englishStar3
-                else -> englishStar1  // Default to star 1 for invalid star numbers
+                else -> englishStar1
             }
         }
-        // Story 2.1 (AC2): Order by difficulty - shorter words first, then longer words
-        // Shuffle within each length group for variety while maintaining difficulty progression
-        return wordList
+    }
+
+    /**
+     * Shuffle words within length groups while maintaining difficulty order.
+     * Story 2.1 (AC2): Order by difficulty - shorter words first, then longer words.
+     */
+    private fun shuffleByLength(words: List<String>): List<String> {
+        return words
             .groupBy { it.length }
             .toSortedMap()
-            .flatMap { (_, words) -> words.shuffled() }
+            .flatMap { (_, wordGroup) -> wordGroup.shuffled() }
     }
 }
