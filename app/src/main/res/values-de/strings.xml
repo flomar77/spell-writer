@@ -1,25 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Story 3.3: German string resources for UI localization (AC5, AC7, AC9)
+  FR8.7: UI strings localized for German language
+-->
 <resources>
     <!-- App name -->
-    <string name="app_name">Spell Writer</string>
+    <string name="app_name">Zauber Schreiber</string>
 
     <!-- Home Screen -->
-    <string name="home_title">SPELL WRITER</string>
+    <string name="home_title">ZAUBER SCHREIBER</string>
     <string name="home_instruction">Um zu gewinnen, schreibe die Wörter, die du hörst, richtig</string>
     <string name="home_play">SPIELEN</string>
-    <string name="world_wizard">Zauberer</string>
-    <string name="world_pirate">Pirat</string>
+    <string name="world_wizard">Zaubererwelt</string>
+    <string name="world_pirate">Piratenwelt</string>
     <string name="world_locked">Gesperrt</string>
 
     <!-- Game Screen -->
+    <string name="grimoire_placeholder">Schreibe das Wort...</string>
     <string name="btn_play_description">Neues Wort</string>
     <string name="btn_repeat_description">Wiederholen</string>
     <string name="progress_format">%1$d/20</string>
+
+    <!-- Story 3.1: Exit Dialog -->
+    <string name="exit_button_description">Sitzung beenden</string>
+    <string name="exit_dialog_title">Sitzung beenden?</string>
+    <string name="exit_dialog_message">Dein Fortschritt wird gespeichert.</string>
+    <string name="exit_dialog_stay">Bleiben</string>
+    <string name="exit_dialog_leave">Verlassen</string>
 
     <!-- Celebrations -->
     <string name="star_earned">Stern verdient!</string>
     <string name="world_complete">Welt abgeschlossen!</string>
     <string name="new_world_unlocked">Neue Welt freigeschaltet!</string>
     <string name="continue_btn">WEITER</string>
-    <string name="home_btn">STARTSEITE</string>
+    <string name="home_btn">START</string>
+
+    <!-- Story 3.3: Language Indicator (AC7) -->
+    <string name="language_name">Deutsch</string>
 </resources>

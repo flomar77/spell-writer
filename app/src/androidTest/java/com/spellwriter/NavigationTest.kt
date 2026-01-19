@@ -2,7 +2,9 @@ package com.spellwriter
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.ui.theme.SpellWriterTheme
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -10,7 +12,16 @@ import org.junit.Test
  * Navigation tests for Story 1.1.
  * Tests screen transitions and navigation performance (AC3).
  */
+
+
 class NavigationTest {
+
+    @Before
+    fun setup() {
+        val mockProgressRepository = mock(ProgressRepository::class.java)
+
+        // Initialize your viewmodel or class under test with this mock
+    }
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -20,7 +31,7 @@ class NavigationTest {
         // Arrange & Act
         composeTestRule.setContent {
             SpellWriterTheme {
-                SpellWriterApp()
+                SpellWriterApp(mockProgressRepository)
             }
         }
 
@@ -61,3 +72,4 @@ class NavigationTest {
         composeTestRule.onNodeWithText("SPELL WRITER").assertDoesNotExist()
     }
 }
+

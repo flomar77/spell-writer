@@ -7,18 +7,24 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.SoundManager
+import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
+import com.spellwriter.data.models.SavedSession
+import com.spellwriter.data.models.SessionState
 import com.spellwriter.data.models.WordPerformance
 import com.spellwriter.data.models.WordPool
 import com.spellwriter.data.repository.ProgressRepository
+import com.spellwriter.data.repository.SessionRepository
+import com.spellwriter.data.repository.WordRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -29,11 +35,13 @@ import java.util.Locale
  * Story 1.5: Ghost expression management with auto-reset and TTS speaking state
  * Story 2.1: 20-word learning sessions with retry logic and session completion
  * Story 2.3: Progress persistence and word performance tracking
+ * Story 3.1: Session control and exit flow with session persistence
  *
  * @param context Application context for TTS and SoundManager
  * @param starNumber Star level (1, 2, or 3) determining word difficulty
  * @param isReplaySession If true, don't update progress (Story 1.2)
  * @param progressRepository Repository for persisting progress (Story 2.3)
+ * @param sessionRepository Repository for persisting session state (Story 3.1)
  * @param initialProgress Initial progress state (Story 2.3)
  */
 class GameViewModel(
@@ -41,6 +49,7 @@ class GameViewModel(
     private val starNumber: Int = 1,
     private val isReplaySession: Boolean = false,
     private val progressRepository: ProgressRepository? = null,
+    private val sessionRepository: SessionRepository? = null,
     private val initialProgress: Progress = Progress()
 ) : ViewModel() {
 
@@ -59,12 +68,32 @@ class GameViewModel(
     // Story 1.5: Job for expression auto-reset (AC6)
     private var expressionResetJob: Job? = null
 
+    // Story 3.3: Language state management (AC1, AC8, FR8.8)
+    private val _currentLanguage = MutableStateFlow(WordRepository.getSystemLanguage())
+    val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
+
+    // Story 3.2: Timeout tracking for encouragement and failure animations (AC1, AC2)
+    private val _lastInputTime = MutableStateFlow(System.currentTimeMillis())
+    private val lastInputTime: StateFlow<Long> = _lastInputTime.asStateFlow()
+
+    private val _isEncouragementShown = MutableStateFlow(false)
+    val isEncouragementShown: StateFlow<Boolean> = _isEncouragementShown.asStateFlow()
+
+    private var timeoutJob: Job? = null
+
     // Story 2.4: Celebration state management (AC7)
     private val _showCelebration = MutableStateFlow(false)
     val showCelebration: StateFlow<Boolean> = _showCelebration.asStateFlow()
 
     private val _celebrationStarLevel = MutableStateFlow(0)
     val celebrationStarLevel: StateFlow<Int> = _celebrationStarLevel.asStateFlow()
+
+    // Story 3.1: Exit dialog and session state management (AC2, AC3, AC4, AC5)
+    private val _showExitDialog = MutableStateFlow(false)
+    val showExitDialog: StateFlow<Boolean> = _showExitDialog.asStateFlow()
+
+    private val _sessionState = MutableStateFlow(SessionState.ACTIVE)
+    val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
     // Story 2.1: Internal tracking for session management (AC3, AC5)
     private val completedWords = mutableSetOf<String>()
@@ -85,6 +114,8 @@ class GameViewModel(
         viewModelScope.launch {
             loadWordsForStar()
         }
+        // Story 3.2: Start timeout monitoring (AC1, AC2)
+        startTimeoutMonitoring()
     }
 
     /**
@@ -118,13 +149,13 @@ class GameViewModel(
 
     /**
      * Get appropriate TTS locale based on app language.
-     * Returns Locale.GERMANY for German, Locale.US for English.
+     * Story 3.3 (AC6): TTS locale matching for proper pronunciation.
+     * FR8.6: TTS language matches app language.
+     *
+     * @return Locale.GERMANY for German, Locale.US for English
      */
     private fun getTTSLocale(): Locale {
-        return when (Locale.getDefault().language) {
-            "de" -> Locale.GERMANY
-            else -> Locale.US
-        }
+        return WordRepository.getTTSLocale(_currentLanguage.value)
     }
 
     /**
@@ -133,11 +164,11 @@ class GameViewModel(
      * Story 1.5: Ghost expression now managed separately
      * Story 2.1: Initializes session tracking with 20 words in difficulty order (AC1, AC2)
      * Story 2.3: Initialize performance tracking (AC3, AC7)
+     * Story 3.3: Language-aware word loading (AC2, AC3)
      * AC5: Word loading from pool
      */
     private suspend fun loadWordsForStar() {
-        val language = Locale.getDefault().language
-        val words = WordPool.getWordsForStar(starNumber, language)
+        val words = WordRepository.getWordsForStar(starNumber, _currentLanguage.value)
 
         // Story 2.1: Initialize session tracking
         completedWords.clear()
@@ -162,7 +193,7 @@ class GameViewModel(
         // Story 1.5: Initialize ghost expression
         _ghostExpression.value = GhostExpression.NEUTRAL
 
-        Log.d(TAG, "Loaded ${words.size} words for star $starNumber, language: $language")
+        Log.d(TAG, "Loaded ${words.size} words for star $starNumber in ${_currentLanguage.value} mode")
     }
 
     /**
@@ -237,6 +268,7 @@ class GameViewModel(
     /**
      * Handle letter typed by user.
      * Validates letter and triggers appropriate feedback.
+     * Story 3.2: Reset timeouts on any key press (AC1, AC2)
      * AC3: Correct letter feedback
      * AC4: Incorrect letter feedback
      * NFR1.3: Feedback within 100ms
@@ -257,6 +289,9 @@ class GameViewModel(
             Log.d(TAG, "Word already complete - ignoring additional input")
             return
         }
+
+        // Story 3.2: Reset timeouts on ANY key press (AC1, AC2)
+        resetTimeouts()
 
         val expectedLetter = currentWord[typedLetters.length]
         val isCorrect = letter.uppercaseChar() == expectedLetter
@@ -344,16 +379,43 @@ class GameViewModel(
 
     /**
      * Story 1.5: Trigger failure animation with DEAD expression (AC5).
-     * Prepared for Story 3.2 timeout functionality.
-     * Does not auto-reset - manually resets after animation completes.
+     * Story 3.2: Enhanced with word retry logic (AC5, AC6).
+     * Clears grimoire, replays word, and treats retry as fresh attempt.
      */
     fun triggerFailureAnimation() {
         setGhostExpression(GhostExpression.DEAD, autoReset = false)
 
         viewModelScope.launch {
-            // Wait for failure animation duration (configurable for Story 3.2)
+            // Wait for failure animation duration (Story 3.2: AC3, AC4)
             delay(2000L)
+
+            // Return to neutral expression (AC6)
             _ghostExpression.value = GhostExpression.NEUTRAL
+
+            // Story 3.2: Word retry after failure (AC5, AC6)
+            retryCurrentWord()
+        }
+    }
+
+    /**
+     * Story 3.2: Retry current word after failure animation (AC5, AC6).
+     * Clears grimoire, repeats word via TTS, and resets timeouts for fresh attempt.
+     */
+    private fun retryCurrentWord() {
+        viewModelScope.launch {
+            // Clear grimoire for fresh attempt (AC5)
+            _gameState.value = _gameState.value.copy(typedLetters = "")
+
+            // Brief pause before retry (AC5)
+            delay(500)
+
+            // Speak word again automatically (AC5)
+            speakCurrentWord()
+
+            // Reset timeouts for fresh attempt (AC6)
+            resetTimeouts()
+
+            Log.d(TAG, "Word retry initiated after failure animation")
         }
     }
 
@@ -400,6 +462,10 @@ class GameViewModel(
                         progressRepository.saveProgress(updatedProgress)
                         progressRepository.clearSessionState()
                         Log.d(TAG, "Progress saved - Star $starNumber earned")
+
+                        // Story 3.1: Clear saved session since session is complete (AC6)
+                        sessionRepository?.clearSession()
+                        Log.d(TAG, "Saved session cleared after star completion")
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to save progress", e)
                     }
@@ -408,6 +474,9 @@ class GameViewModel(
 
             // Story 1.5: Show happy expression on session completion
             setGhostExpression(GhostExpression.HAPPY)
+
+            // Story 3.2: Pause timeouts during celebration (AC5)
+            pauseTimeouts()
 
             // Story 2.4: Trigger celebration after save (AC7)
             _celebrationStarLevel.value = starNumber
@@ -449,6 +518,9 @@ class GameViewModel(
 
         // Story 1.5: Show happy expression on word completion
         setGhostExpression(GhostExpression.HAPPY)
+
+        // Story 3.2: Reset timeouts for next word (AC5)
+        resetTimeouts()
 
         // Speak next word after short delay
         if (nextWord != null) {
@@ -541,18 +613,215 @@ class GameViewModel(
     }
 
     /**
+     * Story 3.1: Request to exit the session (AC1).
+     * Shows the exit confirmation dialog.
+     * Called when user taps the Exit button.
+     */
+    fun requestExit() {
+        _showExitDialog.value = true
+        Log.d(TAG, "Exit requested - showing confirmation dialog")
+    }
+
+    /**
+     * Story 3.1: Cancel exit and stay in session (AC4).
+     * Dismisses the exit confirmation dialog.
+     * Called when user taps "Stay" button.
+     */
+    fun cancelExit() {
+        _showExitDialog.value = false
+        Log.d(TAG, "Exit cancelled - staying in session")
+    }
+
+    /**
+     * Story 3.1: Confirm exit and save session (AC5).
+     * Saves session progress to DataStore, then updates state to trigger navigation.
+     * CRITICAL: Save MUST complete before changing state.
+     *
+     * Called when user taps "Leave" button in confirmation dialog.
+     */
+    suspend fun confirmExit() {
+        Log.d(TAG, "Exit confirmed - saving session and returning to home")
+
+        // CRITICAL: Save session progress FIRST (AC5, FR9.4)
+        saveSessionProgress()
+
+        // Update state to trigger navigation (AC5)
+        _sessionState.value = SessionState.EXITED
+        _showExitDialog.value = false
+    }
+
+    /**
+     * Story 3.1: Save current session progress to DataStore (AC5).
+     * Creates SavedSession with current game state and persists it.
+     * Enables session resume when user returns (AC6).
+     */
+    private suspend fun saveSessionProgress() {
+        if (sessionRepository == null) {
+            Log.w(TAG, "SessionRepository not available - session won't be saved")
+            return
+        }
+
+        val currentState = _gameState.value
+
+        // Get current word index in remaining words
+        val currentWordIndex = if (currentState.remainingWords.contains(currentState.currentWord.lowercase())) {
+            currentState.remainingWords.indexOf(currentState.currentWord.lowercase())
+        } else {
+            0
+        }
+
+        val savedSession = SavedSession(
+            starLevel = starNumber,
+            wordsCompleted = completedWords.size,
+            completedWords = completedWords.toList(),
+            remainingWords = currentState.remainingWords,
+            currentWordIndex = currentWordIndex,
+            timestamp = System.currentTimeMillis()
+        )
+
+        try {
+            sessionRepository.saveSession(savedSession)
+            Log.d(TAG, "Session saved - ${savedSession.wordsCompleted} words completed, ${savedSession.remainingWords.size} remaining")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save session", e)
+        }
+    }
+
+    /**
+     * Story 3.1: Reset session state to ACTIVE (AC5).
+     * Called after navigation completes to prepare for next session.
+     * Also clears saved session from DataStore.
+     */
+    fun resetSession() {
+        _sessionState.value = SessionState.ACTIVE
+        Log.d(TAG, "Session state reset to ACTIVE")
+
+        // Clear saved session since user returned to home
+        viewModelScope.launch {
+            try {
+                sessionRepository?.clearSession()
+                Log.d(TAG, "Saved session cleared")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to clear saved session", e)
+            }
+        }
+    }
+
+    /**
      * Clean up resources when ViewModel is destroyed.
      * CRITICAL: Prevents memory leaks by releasing TTS and audio resources.
+     * Story 3.2: Cancel timeout job (AC lifecycle management)
      */
     override fun onCleared() {
         Log.d(TAG, "Cleaning up GameViewModel resources")
         tts?.stop()
         tts?.shutdown()
         soundManager.release()
+        timeoutJob?.cancel()  // Story 3.2: Cancel timeout monitoring
         super.onCleared()
+    }
+
+    /**
+     * Story 3.2: Start timeout monitoring coroutine (AC1, AC2).
+     * Runs continuously with 1-second intervals to check for timeouts.
+     */
+    private fun startTimeoutMonitoring() {
+        timeoutJob = viewModelScope.launch {
+            while (isActive) {
+                delay(TIMER_TICK_MS)
+                checkTimeouts()
+            }
+        }
+    }
+
+    /**
+     * Story 3.2: Check for timeout conditions (AC1, AC2).
+     * Triggers encouragement at 8s or failure animation at 20s.
+     */
+    private fun checkTimeouts() {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastInput = currentTime - _lastInputTime.value
+        val currentWord = _gameState.value.currentWord
+
+        // Only check timeouts if word is active
+        if (currentWord.isEmpty()) {
+            return
+        }
+
+        // Don't trigger timeouts during animations or celebrations
+        if (_ghostExpression.value == GhostExpression.DEAD || _showCelebration.value) {
+            return
+        }
+
+        when {
+            // 20-second failure timeout (AC2)
+            timeSinceLastInput >= FAILURE_TIMEOUT_MS -> {
+                triggerFailureAnimation()
+                resetTimeouts()
+            }
+            // 8-second encouragement timeout (AC1) - only once per word attempt
+            timeSinceLastInput >= ENCOURAGEMENT_TIMEOUT_MS && !_isEncouragementShown.value -> {
+                showEncouragement()
+            }
+        }
+    }
+
+    /**
+     * Story 3.2: Show encouraging ghost expression (AC1).
+     * Gentle nudge after 8 seconds of inactivity.
+     */
+    private fun showEncouragement() {
+        viewModelScope.launch {
+            _isEncouragementShown.value = true
+
+            // Show encouraging expression
+            _ghostExpression.value = GhostExpression.ENCOURAGING
+
+            // Show for 2 seconds
+            delay(2000)
+
+            // Return to neutral
+            _ghostExpression.value = GhostExpression.NEUTRAL
+        }
+    }
+
+    /**
+     * Story 3.2: Reset timeout timers (AC1, AC2).
+     * Called on any key press to reset inactivity and failure timers.
+     */
+    fun resetTimeouts() {
+        _lastInputTime.value = System.currentTimeMillis()
+        _isEncouragementShown.value = false
+    }
+
+    /**
+     * Story 3.2: Pause timeout monitoring (AC5).
+     * Used during celebrations and other animations.
+     */
+    private fun pauseTimeouts() {
+        timeoutJob?.cancel()
+        timeoutJob = null
+        Log.d(TAG, "Timeout monitoring paused")
+    }
+
+    /**
+     * Story 3.2: Resume timeout monitoring (AC5).
+     * Restarts timeout system after celebrations or animations.
+     */
+    private fun resumeTimeouts() {
+        if (timeoutJob == null) {
+            startTimeoutMonitoring()
+            resetTimeouts()  // Fresh start after resume
+            Log.d(TAG, "Timeout monitoring resumed")
+        }
     }
 
     companion object {
         private const val TAG = "GameViewModel"
+
+        // Story 3.2: Timeout constants (AC1, AC2, AC8)
+        const val ENCOURAGEMENT_TIMEOUT_MS = 8_000L  // 8 seconds
+        const val FAILURE_TIMEOUT_MS = 20_000L       // 20 seconds
+        const val TIMER_TICK_MS = 1_000L             // Check every second
     }
 }

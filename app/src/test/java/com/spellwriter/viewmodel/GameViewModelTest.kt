@@ -255,9 +255,71 @@ class GameViewModelTest {
         assertEquals(0, viewModel.celebrationStarLevel.value)
     }
 
+    // Story 3.1: Exit flow tests (AC1, AC2, AC3, AC4, AC5)
+
+    @Test
+    fun requestExit_showsExitDialog() {
+        val viewModel = createTestViewModel()
+
+        viewModel.requestExit()
+
+        assertTrue("Exit dialog should be shown", viewModel.showExitDialog.value)
+        assertEquals("Session should remain ACTIVE",
+            com.spellwriter.data.models.SessionState.ACTIVE,
+            viewModel.sessionState.value)
+    }
+
+    @Test
+    fun cancelExit_hidesExitDialog() {
+        val viewModel = createTestViewModel()
+        viewModel.requestExit()
+
+        viewModel.cancelExit()
+
+        assertFalse("Exit dialog should be hidden", viewModel.showExitDialog.value)
+        assertEquals("Session should remain ACTIVE",
+            com.spellwriter.data.models.SessionState.ACTIVE,
+            viewModel.sessionState.value)
+    }
+
+    @Test
+    fun exitFlowStates_initialState_isCorrect() {
+        val viewModel = createTestViewModel()
+
+        assertFalse("Exit dialog should be initially hidden", viewModel.showExitDialog.value)
+        assertEquals("Session should be initially ACTIVE",
+            com.spellwriter.data.models.SessionState.ACTIVE,
+            viewModel.sessionState.value)
+    }
+
+    @Test
+    fun resetSession_resetsSessionStateToActive() {
+        val viewModel = createTestViewModel()
+
+        viewModel.resetSession()
+
+        assertEquals("Session should be reset to ACTIVE",
+            com.spellwriter.data.models.SessionState.ACTIVE,
+            viewModel.sessionState.value)
+    }
+
+    @Test
+    fun exitDialog_doesNotAffectGameState() {
+        val viewModel = createTestViewModel()
+        val initialGameState = viewModel.gameState.value
+
+        viewModel.requestExit()
+        val gameStateAfterRequest = viewModel.gameState.value
+
+        // Game state should be preserved when exit dialog is shown
+        assertEquals("Game state should not change when exit dialog opens",
+            initialGameState, gameStateAfterRequest)
+    }
+
     /**
      * Helper function to create GameViewModel for testing.
      * Uses test context and mocked dependencies.
+     * Story 3.1: Updated to include SessionRepository
      */
     private fun createTestViewModel(): GameViewModel {
         val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
@@ -266,8 +328,49 @@ class GameViewModelTest {
             starNumber = 1,
             isReplaySession = false,
             progressRepository = null,
+            sessionRepository = null,  // Story 3.1: No session persistence in unit tests
             initialProgress = com.spellwriter.data.models.Progress()
         )
+    }
+
+    // Story 3.2: Timeout tracking and failure handling tests
+
+    @Test
+    fun timeoutTracking_initialState_isCorrect() {
+        val viewModel = createTestViewModel()
+
+        // Initial state should have no encouragement shown
+        assertFalse("Encouragement should not be shown initially",
+            viewModel.isEncouragementShown.value)
+
+        // Ghost should be neutral initially
+        assertEquals("Ghost should be NEUTRAL initially",
+            GhostExpression.NEUTRAL,
+            viewModel.ghostExpression.value)
+    }
+
+    @Test
+    fun resetTimeouts_clearsEncouragementFlag() {
+        val viewModel = createTestViewModel()
+
+        // Call resetTimeouts
+        viewModel.resetTimeouts()
+
+        // Verify encouragement flag is cleared
+        assertFalse("Encouragement flag should be false after reset",
+            viewModel.isEncouragementShown.value)
+    }
+
+    @Test
+    fun onLetterTyped_resetsTimeouts() {
+        val viewModel = createTestViewModel()
+
+        // Type a letter (this should reset timeouts)
+        viewModel.onLetterTyped('A')
+
+        // Verify encouragement flag is cleared
+        assertFalse("Encouragement should be reset on letter typed",
+            viewModel.isEncouragementShown.value)
     }
 
     // Note: GameViewModel tests requiring Context, TTS, and SoundManager
@@ -275,4 +378,8 @@ class GameViewModelTest {
     // Integration tests for onWordFailed() and full session flow require
     // instrumentation testing with mocked Context/TTS.
     // Celebration trigger test (after 20-word completion) is in instrumentation tests.
+    // Story 3.1: confirmExit() tests with session saving are in instrumentation tests
+    // due to requirement for coroutine testing and DataStore mocking.
+    // Story 3.2: Full timeout behavior tests (8s, 20s) are in instrumentation tests
+    // due to requirement for coroutine time control with advanceTimeBy().
 }

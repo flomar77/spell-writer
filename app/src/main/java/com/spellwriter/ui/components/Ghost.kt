@@ -36,11 +36,13 @@ fun Ghost(
     modifier: Modifier = Modifier
 ) {
     // Story 1.5: Expression to emoji mapping
+    // Story 3.2: Added ENCOURAGING expression (AC1)
     val emoji = when (expression) {
         GhostExpression.NEUTRAL -> "👻"     // Default expression
         GhostExpression.HAPPY -> "😊"       // AC3: Correct letter feedback (warm, encouraging)
         GhostExpression.UNHAPPY -> "😔"     // AC4: Incorrect letter feedback (gentle, not scary)
         GhostExpression.DEAD -> "💀"        // AC5: Failure animation (humorous, cartoonish)
+        GhostExpression.ENCOURAGING -> "🤗" // Story 3.2: Gentle encouragement after 8s timeout
     }
 
     Box(
