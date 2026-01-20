@@ -81,6 +81,9 @@ class GameViewModel(
     private val _isEncouragementShown = MutableStateFlow(false)
     val isEncouragementShown: StateFlow<Boolean> = _isEncouragementShown.asStateFlow()
 
+    // Track if word has already been retried once (only retry once per word attempt)
+    private val _hasRetriedCurrentWord = MutableStateFlow(false)
+
     private var timeoutJob: Job? = null
 
     // Story 2.4: Celebration state management (AC7)
@@ -412,9 +415,13 @@ class GameViewModel(
     /**
      * Story 3.2: Retry current word after failure animation (AC5, AC6).
      * Clears grimoire, repeats word via TTS, and resets timeouts for fresh attempt.
+     * Only retries once per word - subsequent timeouts are ignored until user input.
      */
     private fun retryCurrentWord() {
         viewModelScope.launch {
+            // Mark that we've retried this word (only retry once)
+            _hasRetriedCurrentWord.value = true
+
             // Clear grimoire for fresh attempt (AC5)
             _gameState.value = _gameState.value.copy(typedLetters = "")
 
@@ -427,7 +434,7 @@ class GameViewModel(
             // Reset timeouts for fresh attempt (AC6)
             resetTimeouts()
 
-            Log.d(TAG, "Word retry initiated after failure animation")
+            Log.d(TAG, "Word retry initiated after failure animation (will not retry again)")
         }
     }
 
@@ -759,6 +766,7 @@ class GameViewModel(
     /**
      * Story 3.2: Check for timeout conditions (AC1, AC2).
      * Triggers encouragement at 8s or failure animation at 20s.
+     * Only retries the word once - after that, waits for user input.
      */
     private fun checkTimeouts() {
         val currentTime = System.currentTimeMillis()
@@ -776,8 +784,8 @@ class GameViewModel(
         }
 
         when {
-            // 20-second failure timeout (AC2)
-            timeSinceLastInput >= FAILURE_TIMEOUT_MS -> {
+            // 20-second failure timeout (AC2) - only if word hasn't been retried yet
+            timeSinceLastInput >= FAILURE_TIMEOUT_MS && !_hasRetriedCurrentWord.value -> {
                 triggerFailureAnimation()
                 resetTimeouts()
             }
@@ -810,10 +818,13 @@ class GameViewModel(
     /**
      * Story 3.2: Reset timeout timers (AC1, AC2).
      * Called on any key press to reset inactivity and failure timers.
+     * Also resets the retry flag when user provides input.
      */
     fun resetTimeouts() {
         _lastInputTime.value = System.currentTimeMillis()
         _isEncouragementShown.value = false
+        // Reset retry flag when user provides input - allows retry again if they stop
+        _hasRetriedCurrentWord.value = false
     }
 
     /**
