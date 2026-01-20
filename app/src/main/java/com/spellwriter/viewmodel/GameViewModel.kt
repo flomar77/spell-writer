@@ -455,6 +455,9 @@ class GameViewModel(
         // Story 2.1: Remove from failed words if it was a retry (AC5)
         val updatedFailedWords = _gameState.value.failedWords.filter { it != currentWord }
 
+        // Add to completed words list for display
+        val updatedCompletedWords = _gameState.value.completedWords + currentWord
+
         // Story 1.5: Show happy expression on word completion
         setGhostExpression(GhostExpression.HAPPY)
 
@@ -472,7 +475,8 @@ class GameViewModel(
                         typedLetters = "",
                         sessionComplete = true,
                         remainingWords = emptyList(),
-                        failedWords = emptyList()
+                        failedWords = emptyList(),
+                        completedWords = updatedCompletedWords
                     )
                 }
 
@@ -524,7 +528,8 @@ class GameViewModel(
                     currentWord = nextWord?.uppercase() ?: "",
                     typedLetters = "",  // Clear for next word
                     remainingWords = currentRemaining.drop(1),
-                    failedWords = updatedFailedWords
+                    failedWords = updatedFailedWords,
+                    completedWords = updatedCompletedWords
                 )
             }
 

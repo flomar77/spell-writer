@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.ui.components.CelebrationSequence
+import com.spellwriter.ui.components.CompletedWordsList
 import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.Grimoire
 import com.spellwriter.ui.components.SpellKeyboard
@@ -159,11 +160,20 @@ fun GameScreen(
                     modifier = Modifier.padding(end = 8.dp)
                 )
 
-                // Center: Grimoire
-                Grimoire(
-                    typedLetters = gameState.typedLetters,
+                // Center: Grimoire and completed words
+                Column(
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Grimoire(
+                        typedLetters = gameState.typedLetters,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Completed words list under the Grimoire
+                    CompletedWordsList(
+                        completedWords = gameState.completedWords
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

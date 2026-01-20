@@ -15,6 +15,7 @@ package com.spellwriter.data.models
  * @param sessionComplete True when all 20 unique words have been completed (AC6)
  * @param remainingWords Words not yet completed (decreases as words are completed) (AC1, AC4)
  * @param failedWords Words that were failed and need retry (AC3, AC5)
+ * @param completedWords List of words completed in order (for display under Grimoire)
  */
 data class GameState(
     val currentWord: String = "",
@@ -25,5 +26,6 @@ data class GameState(
     // Story 2.1: Session tracking fields
     val sessionComplete: Boolean = false,
     val remainingWords: List<String> = emptyList(),
-    val failedWords: List<String> = emptyList()
+    val failedWords: List<String> = emptyList(),
+    val completedWords: List<String> = emptyList()
 )
