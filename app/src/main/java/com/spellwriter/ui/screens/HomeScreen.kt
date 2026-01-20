@@ -26,6 +26,7 @@ import com.spellwriter.ui.components.WorldProgressRow
  * @param progress User progress tracking (Story 1.2)
  * @param onPlayClick Callback when user taps the PLAY button to start the game
  * @param onStarClick Callback when user taps a star to replay that level (Story 1.2)
+ * @param onLanguageChanged Callback when language is changed to trigger recomposition
  * @param modifier Optional modifier for the screen
  */
 @Composable
@@ -33,6 +34,7 @@ fun HomeScreen(
     progress: Progress,
     onPlayClick: () -> Unit,
     onStarClick: (Int) -> Unit,
+    onLanguageChanged: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -42,7 +44,7 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        LanguageSwitcher()
+        LanguageSwitcher(onLanguageChanged = onLanguageChanged)
         // App Title
         Text(
             text = stringResource(R.string.home_title),

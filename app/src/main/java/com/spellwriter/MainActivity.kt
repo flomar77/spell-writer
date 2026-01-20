@@ -1,5 +1,6 @@
 package com.spellwriter
 
+import LanguageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,6 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.spellwriter.data.models.Progress
@@ -82,36 +85,46 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
     // Story 2.3: Load progress from repository (AC4, NFR3.3)
     val progress by progressRepository.progressFlow.collectAsState(initial = Progress())
 
-    when (currentScreen) {
-        is Screen.Home -> {
-            HomeScreen(
-                progress = progress,  // Story 1.2, 2.3
-                onPlayClick = {
-                    selectedStar = null  // Auto-select current star
-                    currentScreen = Screen.Game
-                },
-                onStarClick = { starNumber ->  // Story 1.2
-                    selectedStar = starNumber  // Replay specific star
-                    currentScreen = Screen.Game
-                }
-            )
-        }
+    // Track language changes to force recomposition
+    val context = LocalContext.current
+    var languageKey by remember { mutableStateOf(LanguageManager.getCurrentLanguage(context)) }
 
-        is Screen.Game -> {
-            GameScreen(
-                starNumber = selectedStar ?: progress.getCurrentStar(),  // Story 1.2
-                isReplaySession = selectedStar != null,  // Story 1.2
-                progressRepository = progressRepository,  // Story 2.3
-                currentProgress = progress,  // Story 2.3
-                onBackPress = {
-                    currentScreen = Screen.Home
-                },
-                onStarComplete = { completedStar ->  // Story 1.2, 2.3
-                    // Star completion now handled by GameViewModel persistence
-                    // Just navigate back to home
-                    currentScreen = Screen.Home
-                }
-            )
+    // Use key to force recomposition when language changes
+    key(languageKey) {
+        when (currentScreen) {
+            is Screen.Home -> {
+                HomeScreen(
+                    progress = progress,  // Story 1.2, 2.3
+                    onPlayClick = {
+                        selectedStar = null  // Auto-select current star
+                        currentScreen = Screen.Game
+                    },
+                    onStarClick = { starNumber ->  // Story 1.2
+                        selectedStar = starNumber  // Replay specific star
+                        currentScreen = Screen.Game
+                    },
+                    onLanguageChanged = { newLanguage ->
+                        languageKey = newLanguage
+                    }
+                )
+            }
+
+            is Screen.Game -> {
+                GameScreen(
+                    starNumber = selectedStar ?: progress.getCurrentStar(),  // Story 1.2
+                    isReplaySession = selectedStar != null,  // Story 1.2
+                    progressRepository = progressRepository,  // Story 2.3
+                    currentProgress = progress,  // Story 2.3
+                    onBackPress = {
+                        currentScreen = Screen.Home
+                    },
+                    onStarComplete = { completedStar ->  // Story 1.2, 2.3
+                        // Star completion now handled by GameViewModel persistence
+                        // Just navigate back to home
+                        currentScreen = Screen.Home
+                    }
+                )
+            }
         }
     }
 }

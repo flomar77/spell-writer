@@ -10,16 +10,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun LanguageSwitcher(viewModel: LanguageViewModel = viewModel()) {
+fun LanguageSwitcher(
+    viewModel: LanguageViewModel = viewModel(),
+    onLanguageChanged: (String) -> Unit = {}
+) {
     val context = LocalContext.current
-    val langViewModel = LanguageViewModel()
-    var currentLanguage = viewModel.currentLanguage.collectAsState().value
+    val currentLanguage by viewModel.currentLanguage.collectAsState()
 
-    // Initialize with saved language
+    // Initialize with saved language on first composition
     LaunchedEffect(Unit) {
         val savedLanguage = LanguageManager.getCurrentLanguage(context)
         if (currentLanguage != savedLanguage) {
-            langViewModel.setLanguage(savedLanguage)
+            viewModel.setLanguage(savedLanguage)
         }
     }
 
@@ -47,7 +49,8 @@ fun LanguageSwitcher(viewModel: LanguageViewModel = viewModel()) {
                 isSelected = currentLanguage == "en",
                 onClick = {
                     LanguageManager.setLocale(context, "en")
-                    currentLanguage = "en"
+                    viewModel.setLanguage("en")
+                    onLanguageChanged("en")
                 }
             )
 
@@ -57,17 +60,9 @@ fun LanguageSwitcher(viewModel: LanguageViewModel = viewModel()) {
                 isSelected = currentLanguage == "de",
                 onClick = {
                     LanguageManager.setLocale(context, "de")
-                    currentLanguage = "de"
+                    viewModel.setLanguage("de")
+                    onLanguageChanged("de")
                 }
-            )
-        }
-
-        // Optional: Add a confirmation message
-        if (currentLanguage != LanguageManager.getCurrentLanguage(context)) {
-            Text(
-                text = "Language changed to ${currentLanguage}",
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 16.dp)
             )
         }
     }
