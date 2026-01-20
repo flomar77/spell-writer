@@ -23,13 +23,10 @@ class SoundManager(private val context: Context) {
     /**
      * Load sound effects from resources.
      * Handles missing sound files gracefully.
-     *
-     * NOTE: Empty placeholder MP3 files exist in res/raw/ but contain no audio.
-     * Production-quality sound files are needed for AC3/AC4 audio feedback.
      */
     private fun loadSounds() {
         try {
-            // Load success sound (currently empty placeholder)
+            // Load success sound
             successPlayer = try {
                 MediaPlayer.create(context, R.raw.success)
             } catch (e: Exception) {
@@ -37,7 +34,7 @@ class SoundManager(private val context: Context) {
                 null
             }
 
-            // Load error sound (currently empty placeholder)
+            // Load error sound
             errorPlayer = try {
                 MediaPlayer.create(context, R.raw.error)
             } catch (e: Exception) {
