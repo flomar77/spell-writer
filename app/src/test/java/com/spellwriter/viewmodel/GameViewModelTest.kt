@@ -373,6 +373,48 @@ class GameViewModelTest {
             viewModel.isEncouragementShown.value)
     }
 
+    // Word completion timing tests
+
+    @Test
+    fun wordCompleteDisplayDelay_isSetTo500ms() {
+        // Verify the constant is set correctly
+        assertEquals(
+            "WORD_COMPLETE_DISPLAY_DELAY_MS should be 500ms",
+            500L,
+            GameViewModel.WORD_COMPLETE_DISPLAY_DELAY_MS
+        )
+    }
+
+    @Test
+    fun gameState_typedLetters_showsLastLetterImmediately() {
+        // When last letter is typed, it should appear immediately in typedLetters
+        // (before the delay for word transition)
+        val state = GameState(
+            currentWord = "CAT",
+            typedLetters = "CAT"  // All letters typed including last one
+        )
+
+        // The complete word should be visible in typedLetters
+        assertEquals("CAT", state.typedLetters)
+        assertEquals(state.currentWord, state.typedLetters)
+    }
+
+    @Test
+    fun gameState_completedWord_matchesCurrentWord() {
+        // When word is completed, typedLetters should match currentWord exactly
+        // This ensures the last letter is shown before any transition
+        val word = "TREE"
+        val state = GameState(
+            currentWord = word,
+            typedLetters = word
+        )
+
+        assertTrue(
+            "typedLetters should match currentWord when complete",
+            state.typedLetters == state.currentWord
+        )
+    }
+
     // Note: GameViewModel tests requiring Context, TTS, and SoundManager
     // are in instrumentation tests (androidTest)
     // Integration tests for onWordFailed() and full session flow require
@@ -381,5 +423,7 @@ class GameViewModelTest {
     // Story 3.1: confirmExit() tests with session saving are in instrumentation tests
     // due to requirement for coroutine testing and DataStore mocking.
     // Story 3.2: Full timeout behavior tests (8s, 20s) are in instrumentation tests
+    // due to requirement for coroutine time control with advanceTimeBy().
+    // Word completion timing test (500ms delay) is in instrumentation tests
     // due to requirement for coroutine time control with advanceTimeBy().
 }

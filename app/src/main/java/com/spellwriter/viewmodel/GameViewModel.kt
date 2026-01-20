@@ -438,6 +438,8 @@ class GameViewModel(
      * Story 2.3: Save performance data and persist progress (AC2, AC3, AC4, AC7)
      * AC5: Word completion and progression
      * NFR1.4: Animations run at 60fps
+     *
+     * Word stays visible for WORD_COMPLETE_DISPLAY_DELAY_MS before transitioning to next word.
      */
     private fun onWordCompleted() {
         val currentWord = _gameState.value.currentWord
@@ -453,22 +455,29 @@ class GameViewModel(
         // Story 2.1: Remove from failed words if it was a retry (AC5)
         val updatedFailedWords = _gameState.value.failedWords.filter { it != currentWord }
 
+        // Story 1.5: Show happy expression on word completion
+        setGhostExpression(GhostExpression.HAPPY)
+
         // Story 2.1, 2.3: Check session completion FIRST (AC6)
         if (newWordsCompleted >= 20) {
             Log.d(TAG, "Session complete - all 20 unique words finished")
-            _gameState.update {
-                it.copy(
-                    wordsCompleted = newWordsCompleted,
-                    typedLetters = "",
-                    sessionComplete = true,
-                    remainingWords = emptyList(),
-                    failedWords = emptyList()
-                )
-            }
 
-            // Story 2.3: Save progress immediately after star completion (AC2, AC4, NFR3.1)
-            if (!isReplaySession && progressRepository != null) {
-                viewModelScope.launch {
+            // Keep word visible briefly before showing completion
+            viewModelScope.launch {
+                delay(WORD_COMPLETE_DISPLAY_DELAY_MS)
+
+                _gameState.update {
+                    it.copy(
+                        wordsCompleted = newWordsCompleted,
+                        typedLetters = "",
+                        sessionComplete = true,
+                        remainingWords = emptyList(),
+                        failedWords = emptyList()
+                    )
+                }
+
+                // Story 2.3: Save progress immediately after star completion (AC2, AC4, NFR3.1)
+                if (!isReplaySession && progressRepository != null) {
                     try {
                         val updatedProgress = initialProgress.earnStar(starNumber)
                         progressRepository.saveProgress(updatedProgress)
@@ -482,18 +491,15 @@ class GameViewModel(
                         Log.e(TAG, "Failed to save progress", e)
                     }
                 }
+
+                // Story 3.2: Pause timeouts during celebration (AC5)
+                pauseTimeouts()
+
+                // Story 2.4: Trigger celebration after save (AC7)
+                _celebrationStarLevel.value = starNumber
+                _showCelebration.value = true
+                Log.d(TAG, "Celebration triggered for star $starNumber")
             }
-
-            // Story 1.5: Show happy expression on session completion
-            setGhostExpression(GhostExpression.HAPPY)
-
-            // Story 3.2: Pause timeouts during celebration (AC5)
-            pauseTimeouts()
-
-            // Story 2.4: Trigger celebration after save (AC7)
-            _celebrationStarLevel.value = starNumber
-            _showCelebration.value = true
-            Log.d(TAG, "Celebration triggered for star $starNumber")
             return
         }
 
@@ -506,43 +512,42 @@ class GameViewModel(
             startWordTracking(nextWord)
         }
 
-        // Update state with progression
-        _gameState.update {
-            it.copy(
-                wordsCompleted = newWordsCompleted,
-                currentWord = nextWord?.uppercase() ?: "",
-                typedLetters = "",  // Clear for next word
-                remainingWords = currentRemaining.drop(1),
-                failedWords = updatedFailedWords
-            )
-        }
+        // Keep completed word visible briefly, then transition to next word
+        viewModelScope.launch {
+            // Wait for word to be displayed before clearing
+            delay(WORD_COMPLETE_DISPLAY_DELAY_MS)
 
-        // Story 2.3: Save session state after each word (AC6, NFR3.1)
-        if (progressRepository != null) {
-            viewModelScope.launch {
+            // Update state with progression
+            _gameState.update {
+                it.copy(
+                    wordsCompleted = newWordsCompleted,
+                    currentWord = nextWord?.uppercase() ?: "",
+                    typedLetters = "",  // Clear for next word
+                    remainingWords = currentRemaining.drop(1),
+                    failedWords = updatedFailedWords
+                )
+            }
+
+            // Story 2.3: Save session state after each word (AC6, NFR3.1)
+            if (progressRepository != null) {
                 try {
                     progressRepository.saveSessionState(starNumber, newWordsCompleted)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to save session state", e)
                 }
             }
-        }
 
-        // Story 1.5: Show happy expression on word completion
-        setGhostExpression(GhostExpression.HAPPY)
+            // Story 3.2: Reset timeouts for next word (AC5)
+            resetTimeouts()
 
-        // Story 3.2: Reset timeouts for next word (AC5)
-        resetTimeouts()
-
-        // Speak next word after short delay
-        if (nextWord != null) {
-            viewModelScope.launch {
-                delay(800)  // Brief pause before next word
+            // Speak next word after additional delay
+            if (nextWord != null) {
+                delay(300)  // Brief pause before speaking next word
                 speakCurrentWord()
+            } else {
+                // This shouldn't happen if session logic is correct
+                Log.w(TAG, "No remaining words but session not complete - checking session state")
             }
-        } else {
-            // This shouldn't happen if session logic is correct
-            Log.w(TAG, "No remaining words but session not complete - checking session state")
         }
     }
 
@@ -835,5 +840,8 @@ class GameViewModel(
         const val ENCOURAGEMENT_TIMEOUT_MS = 8_000L  // 8 seconds
         const val FAILURE_TIMEOUT_MS = 20_000L       // 20 seconds
         const val TIMER_TICK_MS = 1_000L             // Check every second
+
+        // Word completion display delay - keeps completed word visible before transitioning
+        const val WORD_COMPLETE_DISPLAY_DELAY_MS = 500L  // 500ms
     }
 }
