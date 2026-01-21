@@ -59,7 +59,7 @@
 
 - [x] 16. [CHECK] Run full test suite and ask user to review changes
 
-- [ ] 17. [COMMIT] Commit changes with message `feat: replace custom SpellKeyboard with native keyboard TextField` if user agreed in step above
+- [x] 17. [COMMIT] Commit changes with message `feat: replace custom SpellKeyboard with native keyboard TextField` if user agreed in step above
 
 ## Phase 4: Polish
 
