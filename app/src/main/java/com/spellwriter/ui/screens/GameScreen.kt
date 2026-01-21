@@ -2,6 +2,7 @@ package com.spellwriter.ui.screens
 
 import LanguageSwitcher
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -10,6 +11,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.spellwriter.R
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
@@ -210,12 +213,26 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Keyboard at bottom (AC3, AC4)
-            SpellKeyboard(
-                onLetterClick = { letter ->
-                    // Story 1.4: Integrated gameplay logic
-                    viewModel.onLetterTyped(letter[0])
+            // Native keyboard TextField for letter-by-letter input
+            // The TextField value is always bound to validated typedLetters from ViewModel
+            TextField(
+                value = gameState.typedLetters,
+                onValueChange = { newValue ->
+                    // Only process additions (when length increases)
+                    if (newValue.length > gameState.typedLetters.length) {
+                        // Extract the newly typed character and convert to uppercase
+                        val newChar = newValue.last().uppercaseChar()
+                        // Delegate to existing validation logic in ViewModel
+                        viewModel.onLetterTyped(newChar)
+                    }
+                    // Note: TextField value is always bound to gameState.typedLetters
+                    // If letter is incorrect, ViewModel won't update typedLetters,
+                    // causing TextField to reset to the validated state
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Characters,
+                    autoCorrectEnabled = false
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }

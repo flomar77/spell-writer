@@ -16,7 +16,7 @@
 
 - [x] 3. [IMPL] Implement the native keyboard input handling logic in GameScreen to intercept TextField value changes and delegate to existing onLetterTyped validation
 
-- [ ] 4. [CHECK] Run full test suite (`./gradlew test`) and ask user to review changes
+- [x] 4. [CHECK] Run full test suite (`./gradlew test`) and ask user to review changes
 
 - [ ] 5. [COMMIT] Commit changes with message `feat: add native keyboard input handling with letter validation` if user agreed in step above
 
