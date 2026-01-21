@@ -18,7 +18,7 @@
 
 - [x] 4. [CHECK] Run full test suite (`./gradlew test`) and ask user to review changes
 
-- [ ] 5. [COMMIT] Commit changes with message `feat: add native keyboard input handling with letter validation` if user agreed in step above
+- [x] 5. [COMMIT] Commit changes with message `feat: add native keyboard input handling with letter validation` if user agreed in step above
 
 ### Feature: Backspace prevention
 
