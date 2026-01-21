@@ -22,12 +22,12 @@
 
 ### Feature: Backspace prevention
 
-- [ ] 6. [TEST] Write tests for backspace prevention that verify:
+- [x] 6. [TEST] Write tests for backspace prevention that verify:
   - When user attempts to delete a character, typedLetters remains unchanged
   - TextField value is always bound to the validated typedLetters state
   - Only additions (new characters) are processed, deletions are ignored
 
-- [ ] 7. [IMPL] Implement backspace prevention by comparing new TextField value length with current typedLetters and only processing when length increases
+- [x] 7. [IMPL] Implement backspace prevention by comparing new TextField value length with current typedLetters and only processing when length increases
 
 - [ ] 8. [CHECK] Run full test suite and ask user to review changes
 

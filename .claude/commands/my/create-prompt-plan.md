@@ -1,5 +1,5 @@
 Read the attached new_requirements.md and generate or update a prompt_plan.md with TDD-focused
-implementation steps. Keep already checked steps as checked if a prompt_plan.md already exists .
+implementation steps. Keep already checked steps as checked if a prompt_plan.md already exists.
 
 For each feature in the spec:
 1. First prompt: Write failing tests
