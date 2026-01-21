@@ -198,12 +198,12 @@ class WordRepositoryTest {
     fun getTTSLocale_german_returnsGermanyLocale() {
         val locale = when (AppLanguage.GERMAN) {
             AppLanguage.GERMAN -> {
-                d(WordRepository.TAG, "TTS locale: German (de-DE)")
+                d("WordRepositoryTest", "TTS locale: German (de-DE)")
                 GERMANY
             }
 
             AppLanguage.ENGLISH -> {
-                d(WordRepository.TAG, "TTS locale: English (en-US)")
+                d("WordRepositoryTest", "TTS locale: English (en-US)")
                 US
             }
         }
@@ -217,12 +217,12 @@ class WordRepositoryTest {
     fun getTTSLocale_english_returnsUSLocale() {
         val locale = when (AppLanguage.ENGLISH) {
             AppLanguage.GERMAN -> {
-                d(WordRepository.TAG, "TTS locale: German (de-DE)")
+                d("WordRepositoryTest", "TTS locale: German (de-DE)")
                 GERMANY
             }
 
             AppLanguage.ENGLISH -> {
-                d(WordRepository.TAG, "TTS locale: English (en-US)")
+                d("WordRepositoryTest", "TTS locale: English (en-US)")
                 US
             }
         }
