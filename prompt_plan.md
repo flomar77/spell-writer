@@ -9,7 +9,7 @@
 ### Feature: Letter-by-letter validation with native keyboard input
 
 
-- [ ] 2. [TEST] Write tests for native keyboard input handler that verify:
+- [x] 2. [TEST] Write tests for native keyboard input handler that verify:
   - When a correct letter is typed, it is accepted and added to typedLetters
   - When an incorrect letter is typed, it is rejected and typedLetters remains unchanged
   - The onLetterTyped callback is invoked with the new character

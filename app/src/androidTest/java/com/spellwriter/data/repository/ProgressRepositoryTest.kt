@@ -11,6 +11,7 @@ import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.World
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.After
