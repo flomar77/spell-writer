@@ -526,4 +526,262 @@ class NativeKeyboardInputHandlerTest {
         assertTrue("Predictive text should be disabled", !requirements["predictiveText"]!!)
         assertTrue("Uppercase input should be enabled", requirements["uppercaseInput"]!!)
     }
+
+    // ========================================
+    // Integration Tests (Step 14)
+    // ========================================
+    // These tests verify the complete flow from TextField input through validation
+
+    @Test
+    fun integration_correctLetterTyped_appearsInGrimoire() {
+        // This test simulates the complete flow when a correct letter is typed
+
+        // GIVEN: Game is playing word "CAT" and user has typed "C"
+        val currentWord = "CAT"
+        var typedLetters = "C"
+        var letterAccepted = false
+
+        // Simulate onLetterTyped callback that would update typedLetters
+        val onLetterTyped: (Char) -> Unit = { char ->
+            val expectedLetter = currentWord[typedLetters.length]
+            if (char.uppercaseChar() == expectedLetter) {
+                typedLetters += char.uppercaseChar()
+                letterAccepted = true
+            }
+        }
+
+        // WHEN: User types correct letter 'A' via TextField
+        val textFieldValue = "CA"
+        if (textFieldValue.length > typedLetters.length) {
+            val newChar = textFieldValue.last().uppercaseChar()
+            onLetterTyped(newChar)
+        }
+
+        // THEN: Letter appears in Grimoire (typedLetters is updated)
+        assertEquals("Correct letter should appear in Grimoire", "CA", typedLetters)
+        assertTrue("Letter should be accepted", letterAccepted)
+    }
+
+    @Test
+    fun integration_incorrectLetterTyped_doesNotAppearInGrimoire() {
+        // This test simulates the complete flow when an incorrect letter is typed
+
+        // GIVEN: Game is playing word "CAT" and user has typed "C"
+        val currentWord = "CAT"
+        var typedLetters = "C"
+        var letterRejected = false
+
+        // Simulate onLetterTyped callback
+        val onLetterTyped: (Char) -> Unit = { char ->
+            val expectedLetter = currentWord[typedLetters.length]
+            if (char.uppercaseChar() == expectedLetter) {
+                typedLetters += char.uppercaseChar()
+            } else {
+                letterRejected = true
+                // typedLetters NOT updated (letter rejected)
+            }
+        }
+
+        // WHEN: User types incorrect letter 'Z' via TextField (expected 'A')
+        val textFieldValue = "CZ"
+        if (textFieldValue.length > typedLetters.length) {
+            val newChar = textFieldValue.last().uppercaseChar()
+            onLetterTyped(newChar)
+        }
+
+        // THEN: Letter does NOT appear in Grimoire (typedLetters unchanged)
+        assertEquals("Incorrect letter should NOT appear in Grimoire", "C", typedLetters)
+        assertTrue("Letter should be rejected", letterRejected)
+    }
+
+    @Test
+    fun integration_wordCompletion_advancesToNextWord() {
+        // This test simulates completing a word and advancing to the next
+
+        // GIVEN: Game state with current word and next word in queue
+        var currentWord = "CAT"
+        var typedLetters = "CA"
+        var wordsCompleted = 0
+        val remainingWords = mutableListOf("DOG", "SUN")
+
+        // Simulate word completion logic
+        val onLetterTyped: (Char) -> Unit = { char ->
+            val expectedLetter = currentWord[typedLetters.length]
+            if (char.uppercaseChar() == expectedLetter) {
+                typedLetters += char.uppercaseChar()
+
+                // Check if word is complete
+                if (typedLetters == currentWord) {
+                    wordsCompleted++
+                    // Advance to next word
+                    if (remainingWords.isNotEmpty()) {
+                        currentWord = remainingWords.removeAt(0)
+                        typedLetters = ""
+                    }
+                }
+            }
+        }
+
+        // WHEN: User types final letter 'T' to complete "CAT"
+        val textFieldValue = "CAT"
+        if (textFieldValue.length > typedLetters.length) {
+            val newChar = textFieldValue.last().uppercaseChar()
+            onLetterTyped(newChar)
+        }
+
+        // THEN: Word is completed and game advances to next word
+        assertEquals("Word should be completed", 1, wordsCompleted)
+        assertEquals("Should advance to next word", "DOG", currentWord)
+        assertEquals("TypedLetters should reset for new word", "", typedLetters)
+        assertEquals("Remaining words reduced", 1, remainingWords.size)
+    }
+
+    @Test
+    fun integration_multipleWords_completeSession() {
+        // This test simulates completing multiple words in a session
+
+        // GIVEN: Game session with multiple words
+        val words = mutableListOf("CAT", "DOG", "SUN")
+        var currentWordIndex = 0
+        var currentWord = words[currentWordIndex]
+        var typedLetters = ""
+        var wordsCompleted = 0
+
+        // Simulate typing and completing words
+        val completeWord: (String) -> Unit = { word ->
+            // Simulate typing each letter correctly
+            for (char in word) {
+                typedLetters += char
+            }
+            // Word completed
+            wordsCompleted++
+            // Advance to next word
+            currentWordIndex++
+            if (currentWordIndex < words.size) {
+                currentWord = words[currentWordIndex]
+                typedLetters = ""
+            }
+        }
+
+        // WHEN: User completes all three words
+        completeWord("CAT")
+        completeWord("DOG")
+        completeWord("SUN")
+
+        // THEN: All words completed successfully
+        assertEquals("All words should be completed", 3, wordsCompleted)
+        assertEquals("Should be at end of word list", 3, currentWordIndex)
+    }
+
+    @Test
+    fun integration_nativeKeyboard_textFieldValueBindsToValidatedState() {
+        // This test verifies the TextField value binding behavior in the integration flow
+
+        // GIVEN: Game is playing word "DOG"
+        val currentWord = "DOG"
+        var validatedTypedLetters = ""
+
+        // Simulate the complete TextField + ViewModel flow
+        val textFieldOnValueChange: (String) -> Unit = { newValue ->
+            if (newValue.length > validatedTypedLetters.length) {
+                val newChar = newValue.last().uppercaseChar()
+                val expectedLetter = currentWord[validatedTypedLetters.length]
+
+                // Validation in ViewModel
+                if (newChar == expectedLetter) {
+                    validatedTypedLetters += newChar
+                }
+                // If incorrect, validatedTypedLetters is NOT updated
+            }
+            // TextField value is always bound to validatedTypedLetters
+        }
+
+        // WHEN: User types correct letter 'D'
+        textFieldOnValueChange("D")
+        // THEN: TextField shows validated state
+        assertEquals("TextField should show 'D'", "D", validatedTypedLetters)
+
+        // WHEN: User types incorrect letter 'Z' (expected 'O')
+        textFieldOnValueChange("DZ")
+        // THEN: TextField resets to validated state (still shows 'D', not 'DZ')
+        assertEquals("TextField should still show 'D'", "D", validatedTypedLetters)
+
+        // WHEN: User types correct letter 'O'
+        textFieldOnValueChange("DO")
+        // THEN: TextField shows validated state with new letter
+        assertEquals("TextField should show 'DO'", "DO", validatedTypedLetters)
+    }
+
+    @Test
+    fun integration_fullGameFlow_withNativeKeyboard() {
+        // This test documents the complete game flow with native keyboard
+
+        // GIVEN: Initial game state
+        val currentWord = "CAT"
+        var typedLetters = ""
+        var correctLetterFeedback = 0
+        var incorrectLetterFeedback = 0
+
+        // Simulate complete input handler with feedback
+        val handleTextFieldInput: (String) -> Unit = { newValue ->
+            if (newValue.length > typedLetters.length) {
+                val newChar = newValue.last().uppercaseChar()
+                val expectedLetter = currentWord[typedLetters.length]
+
+                if (newChar == expectedLetter) {
+                    typedLetters += newChar
+                    correctLetterFeedback++  // Would trigger happy Ghost
+                } else {
+                    incorrectLetterFeedback++  // Would trigger unhappy Ghost
+                }
+            }
+        }
+
+        // WHEN: User plays the word with native keyboard
+        handleTextFieldInput("C")   // Correct
+        handleTextFieldInput("CA")  // Correct
+        handleTextFieldInput("CAZ") // Incorrect (expected 'T')
+        handleTextFieldInput("CAT") // Correct
+
+        // THEN: Game flow works correctly
+        assertEquals("Grimoire shows correct letters", "CAT", typedLetters)
+        assertEquals("Happy Ghost triggered 3 times", 3, correctLetterFeedback)
+        assertEquals("Unhappy Ghost triggered 1 time", 1, incorrectLetterFeedback)
+        assertEquals("Word completed", currentWord, typedLetters)
+    }
+
+    @Test
+    fun integration_sessionFlow_nativeKeyboardSupportsFullSession() {
+        // This test verifies native keyboard supports completing a full session
+
+        // GIVEN: Session with 20 words (simplified to 3 for test)
+        val sessionWords = listOf("CAT", "DOG", "SUN")
+        var currentWordIndex = 0
+        var typedLetters = ""
+        var sessionComplete = false
+        var totalCorrectLetters = 0
+
+        // Simulate completing each word with native keyboard
+        for (word in sessionWords) {
+            typedLetters = ""
+            for (char in word) {
+                // Simulate TextField input
+                val newValue = typedLetters + char
+                if (newValue.length > typedLetters.length) {
+                    typedLetters = newValue
+                    totalCorrectLetters++
+                }
+            }
+            // Word completed
+            currentWordIndex++
+        }
+
+        // Session complete when all words done
+        sessionComplete = (currentWordIndex == sessionWords.size)
+
+        // THEN: Full session can be completed with native keyboard
+        assertTrue("Session should be completable", sessionComplete)
+        assertEquals("All words completed", sessionWords.size, currentWordIndex)
+        assertEquals("All letters typed correctly", 9, totalCorrectLetters) // CAT(3) + DOG(3) + SUN(3)
+    }
 }

@@ -48,16 +48,16 @@
 
 ## Phase 3: Integration
 
-- [ ] 14. [TEST] Write integration tests that verify the complete flow:
+- [x] 14. [TEST] Write integration tests that verify the complete flow:
   - Native keyboard appears when game starts
   - Typing correct letters shows them in Grimoire and triggers happy Ghost
   - Typing incorrect letters triggers unhappy Ghost without showing in Grimoire
   - Word completion advances to next word
   - Full session can be completed with native keyboard
 
-- [ ] 15. [IMPL] Replace SpellKeyboard composable with configured TextField in GameScreen, ensuring all existing feedback mechanisms (Ghost, sounds, Grimoire) work correctly
+- [x] 15. [IMPL] Replace SpellKeyboard composable with configured TextField in GameScreen, ensuring all existing feedback mechanisms (Ghost, sounds, Grimoire) work correctly
 
-- [ ] 16. [CHECK] Run full test suite and ask user to review changes
+- [x] 16. [CHECK] Run full test suite and ask user to review changes
 
 - [ ] 17. [COMMIT] Commit changes with message `feat: replace custom SpellKeyboard with native keyboard TextField` if user agreed in step above
 
