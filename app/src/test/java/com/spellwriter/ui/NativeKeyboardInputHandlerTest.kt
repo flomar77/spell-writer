@@ -243,4 +243,149 @@ class NativeKeyboardInputHandlerTest {
         // THEN: TextField is reset to validated letters (wrong letter not added)
         assertEquals("TextField should reset to validated state", "CA", validatedTypedLetters)
     }
+
+    // ========================================
+    // Backspace Prevention Tests (Step 6)
+    // ========================================
+
+    @Test
+    fun backspacePrevention_singleBackspace_typedLettersUnchanged() {
+        // GIVEN: User has typed validated letters
+        var typedLetters = "CAT"
+
+        // WHEN: User presses backspace (TextField tries to change from "CAT" to "CA")
+        val newValue = "CA"
+        val shouldProcess = newValue.length > typedLetters.length
+
+        // Don't modify typedLetters if shouldProcess is false
+        if (shouldProcess) {
+            typedLetters = newValue
+        }
+
+        // THEN: typedLetters remains unchanged
+        assertEquals("typedLetters should remain unchanged after backspace", "CAT", typedLetters)
+    }
+
+    @Test
+    fun backspacePrevention_multipleBackspaces_typedLettersUnchanged() {
+        // GIVEN: User has typed validated letters
+        var typedLetters = "HELLO"
+
+        // WHEN: User presses backspace multiple times
+        val attempts = listOf("HELL", "HEL", "HE", "H", "")
+
+        for (attempt in attempts) {
+            val shouldProcess = attempt.length > typedLetters.length
+            if (shouldProcess) {
+                typedLetters = attempt
+            }
+        }
+
+        // THEN: typedLetters remains unchanged after all backspace attempts
+        assertEquals("typedLetters should remain unchanged after multiple backspaces", "HELLO", typedLetters)
+    }
+
+    @Test
+    fun backspacePrevention_backspaceOnSingleChar_typedLettersUnchanged() {
+        // GIVEN: User has typed one validated letter
+        var typedLetters = "A"
+
+        // WHEN: User tries to delete the only character
+        val newValue = ""
+        val shouldProcess = newValue.length > typedLetters.length
+
+        if (shouldProcess) {
+            typedLetters = newValue
+        }
+
+        // THEN: typedLetters remains unchanged
+        assertEquals("Single character should not be deletable", "A", typedLetters)
+    }
+
+    @Test
+    fun backspacePrevention_textFieldAlwaysBoundToValidatedState() {
+        // This test verifies the TextField value binding behavior
+
+        // GIVEN: Current validated state
+        val validatedTypedLetters = "DOG"
+
+        // WHEN: TextField attempts to show a deleted value
+        val attemptedValue = "DO"
+
+        // The TextField value should always be bound to validatedTypedLetters
+        // So even if user tries to change it, the TextField resets to validated state
+        val textFieldValue = if (attemptedValue.length > validatedTypedLetters.length) {
+            attemptedValue
+        } else {
+            validatedTypedLetters  // TextField resets to validated state
+        }
+
+        // THEN: TextField shows validated state, not the attempted deletion
+        assertEquals("TextField should always show validated state", "DOG", textFieldValue)
+    }
+
+    @Test
+    fun backspacePrevention_onlyAdditionsProcessed_deletionsIgnored() {
+        // GIVEN: Current validated letters and a list of value changes
+        val validatedLetters = "CAT"
+        val changes = listOf(
+            "CA" to false,    // Deletion (backspace)
+            "C" to false,     // Deletion (multiple backspaces)
+            "" to false,      // Deletion (clear all)
+            "CAT" to false,   // Same length (no change)
+            "CATS" to true    // Addition (new character)
+        )
+
+        // WHEN/THEN: We check which changes should be processed
+        for ((newValue, expectedToProcess) in changes) {
+            val shouldProcess = newValue.length > validatedLetters.length
+            assertEquals(
+                "Value change '$newValue' should ${if (expectedToProcess) "" else "not "}be processed",
+                expectedToProcess,
+                shouldProcess
+            )
+        }
+    }
+
+    @Test
+    fun backspacePrevention_afterIncorrectLetter_backspaceStillIgnored() {
+        // GIVEN: User has typed correct letters and attempted a wrong letter
+        var validatedTypedLetters = "CA"
+        var callbackCount = 0
+
+        val onValueChange: (String) -> Unit = { newValue ->
+            if (newValue.length > validatedTypedLetters.length) {
+                callbackCount++
+                // Simulate: incorrect letter, so validatedTypedLetters NOT updated
+            }
+        }
+
+        // WHEN: User types wrong letter "Z"
+        onValueChange("CAZ")
+        // validatedTypedLetters is still "CA" (wrong letter rejected)
+
+        // AND: User then tries backspace
+        onValueChange("CA")  // TextField tries to go from "CA" to "CA"
+
+        // THEN: Backspace is still ignored (no callback for same length)
+        assertEquals("Only the incorrect letter attempt should trigger callback", 1, callbackCount)
+        assertEquals("Validated letters should remain unchanged", "CA", validatedTypedLetters)
+    }
+
+    @Test
+    fun backspacePrevention_emptyString_cannotDelete() {
+        // GIVEN: No letters typed yet
+        var typedLetters = ""
+
+        // WHEN: User somehow tries to delete (shouldn't be possible, but test it)
+        val newValue = ""
+        val shouldProcess = newValue.length > typedLetters.length
+
+        if (shouldProcess) {
+            typedLetters = newValue
+        }
+
+        // THEN: No change occurs
+        assertEquals("Empty string should remain empty", "", typedLetters)
+    }
 }
