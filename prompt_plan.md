@@ -44,7 +44,7 @@
 
 - [x] 12. [CHECK] Run full test suite and ask user to review changes
 
-- [ ] 13. [COMMIT] Commit changes with message `feat: configure native keyboard to disable autocorrect and suggestions` if user agreed in step above
+- [x] 13. [COMMIT] Commit changes with message `feat: configure native keyboard to disable autocorrect and suggestions` if user agreed in step above
 
 ## Phase 3: Integration
 
