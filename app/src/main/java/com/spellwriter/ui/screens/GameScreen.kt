@@ -1,4 +1,5 @@
 package com.spellwriter.ui.screens
+
 import LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -129,16 +130,6 @@ fun GameScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Progress indicator
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
-                    LinearProgressIndicator(
-                        progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
                 Spacer(modifier = Modifier.width(16.dp))
                 // Story 1.5: Ghost with expression and speaking animation (AC2, AC3, AC4, AC6)
                 Ghost(
@@ -168,11 +159,21 @@ fun GameScreen(
                         typedLetters = gameState.typedLetters,
                         modifier = Modifier.fillMaxWidth()
                     )
-
                     // Completed words list under the Grimoire
                     CompletedWordsList(
                         completedWords = gameState.completedWords
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Progressbar
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
+                        LinearProgressIndicator(
+                            progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
 

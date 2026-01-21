@@ -39,8 +39,8 @@ fun CompletedWordsList(
     ) {
         wordsToShow.forEachIndexed { index, word ->
             Text(
+                fontSize = 14.sp,
                 text = if (index < wordsToShow.size - 1) "$word  " else word,
-                fontSize = 12.sp,
                 color = Color.Gray
             )
         }
