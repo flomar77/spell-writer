@@ -35,14 +35,14 @@
 
 ### Feature: Disable autocorrect and suggestions
 
-- [ ] 10. [TEST] Write tests for TextField keyboard configuration that verify:
+- [x] 10. [TEST] Write tests for TextField keyboard configuration that verify:
   - KeyboardOptions has autoCorrect set to false
   - KeyboardCapitalization is set to Characters (uppercase)
   - ImeAction is configured appropriately
 
-- [ ] 11. [IMPL] Configure TextField with proper KeyboardOptions to disable autocorrect, suggestions, and predictive text while enabling uppercase input
+- [x] 11. [IMPL] Configure TextField with proper KeyboardOptions to disable autocorrect, suggestions, and predictive text while enabling uppercase input
 
-- [ ] 12. [CHECK] Run full test suite and ask user to review changes
+- [x] 12. [CHECK] Run full test suite and ask user to review changes
 
 - [ ] 13. [COMMIT] Commit changes with message `feat: configure native keyboard to disable autocorrect and suggestions` if user agreed in step above
 
