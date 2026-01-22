@@ -1,7 +1,10 @@
 package com.spellwriter
 
-import LanguageManager
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
+import android.content.res.Resources
+import com.spellwriter.data.models.LanguageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.spellwriter.data.models.Progress
@@ -21,6 +25,7 @@ import com.spellwriter.data.repository.WordsRepository
 import com.spellwriter.ui.screens.GameScreen
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
+import java.util.Locale
 
 /**
  * MainActivity for Stories 1.1, 1.2, and 2.3 - Navigation and progress management.
@@ -62,13 +67,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
-    // Recreate the activity to apply the new locale
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        recreate()
-    }
 }
 
 /**
@@ -79,18 +77,23 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 fun SpellWriterApp(progressRepository: ProgressRepository) {
+    val context = LocalContext.current
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
     var selectedStar by remember { mutableStateOf<Int?>(null) }  // Story 1.2: for replay
+
+    // Track current language for locale-aware context
+    var currentLanguage by remember { mutableStateOf(LanguageManager.getCurrentLanguage(context)) }
+
+    // Create locale-wrapped context
+    val localizedContext = remember(currentLanguage) {
+        createLocaleContext(context, currentLanguage)
+    }
 
     // Story 2.3: Load progress from repository (AC4, NFR3.3)
     val progress by progressRepository.progressFlow.collectAsState(initial = Progress())
 
-    // Track language changes to force recomposition
-    val context = LocalContext.current
-    var languageKey by remember { mutableStateOf(LanguageManager.getCurrentLanguage(context)) }
-
-    // Use key to force recomposition when language changes
-    key(languageKey) {
+    // Provide the localized context to all composables
+    CompositionLocalProvider(LocalContext provides localizedContext) {
         when (currentScreen) {
             is Screen.Home -> {
                 HomeScreen(
@@ -104,7 +107,8 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
                         currentScreen = Screen.Game
                     },
                     onLanguageChanged = { newLanguage ->
-                        languageKey = newLanguage
+                        // Update language state to trigger recomposition with new locale
+                        currentLanguage = newLanguage
                     }
                 )
             }
@@ -127,6 +131,20 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
             }
         }
     }
+}
+
+/**
+ * Creates a context wrapper with the specified locale.
+ * This allows string resources to be loaded in the correct language.
+ */
+fun createLocaleContext(context: Context, languageCode: String): Context {
+    val locale = Locale(languageCode)
+    Locale.setDefault(locale)
+
+    val configuration = Configuration(context.resources.configuration)
+    configuration.setLocale(locale)
+
+    return context.createConfigurationContext(configuration)
 }
 
 /**

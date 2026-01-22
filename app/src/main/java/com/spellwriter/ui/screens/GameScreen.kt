@@ -1,6 +1,6 @@
 package com.spellwriter.ui.screens
 
-import LanguageSwitcher
+import com.spellwriter.ui.components.LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons

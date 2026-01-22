@@ -15,7 +15,8 @@ import org.junit.Assert.*
  * Tests that HomeScreen properly displays and interacts with star progress.
  */
 @RunWith(AndroidJUnit4::class)
-class HomeScreenIntegrationTest {
+class
+HomeScreenIntegrationTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -137,5 +138,33 @@ class HomeScreenIntegrationTest {
         composeTestRule.onNodeWithContentDescription("Star 1 (earned)").assertExists()
         composeTestRule.onNodeWithContentDescription("Star 2 (earned)").assertExists()
         composeTestRule.onNodeWithContentDescription("Star 3 (earned)").assertExists()
+    }
+
+    @Test
+    fun homeScreen_languageSwitch_triggersCallback() {
+        val progress = Progress(wizardStars = 0)
+        var languageChanged: String? = null
+
+        composeTestRule.setContent {
+            HomeScreen(
+                progress = progress,
+                onPlayClick = {},
+                onStarClick = {},
+                onLanguageChanged = { newLanguage ->
+                    languageChanged = newLanguage
+                }
+            )
+        }
+
+        // Verify English strings are initially displayed
+        composeTestRule.onNodeWithText("SPELL WRITER").assertExists()
+        composeTestRule.onNodeWithText("PLAY").assertExists()
+
+        // Switch to German
+        composeTestRule.onNodeWithText("Deutsch").performClick()
+
+        // Verify callback was triggered with correct language code
+        // In actual app, this triggers activity.recreate() which reloads with German strings
+        assertEquals("de", languageChanged)
     }
 }

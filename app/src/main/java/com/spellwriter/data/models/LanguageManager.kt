@@ -1,6 +1,7 @@
+package com.spellwriter.data.models
+
 import android.content.Context
 import android.content.res.Configuration
-import android.content.SharedPreferences
 import java.util.Locale
 
 object LanguageManager {

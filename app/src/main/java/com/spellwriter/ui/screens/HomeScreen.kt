@@ -1,6 +1,5 @@
 package com.spellwriter.ui.screens
 
-import LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -13,6 +12,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spellwriter.R
+import com.spellwriter.ui.components.LanguageSwitcher
 import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
 import com.spellwriter.ui.components.Ghost

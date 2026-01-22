@@ -33,9 +33,9 @@ object WordPool {
     // German word lists
     private val germanStar1 = listOf(
         // 3-letter words (10)
-        "OHR", "ARM", "EIS", "HAT", "ZUG", "TAG", "TON", "BAD", "NAH", "ORT",
+        "OHR", "ARM", "EIS", "HUT", "ZUG", "TAG", "TON", "BAD", "NAH", "ORT",
         // 4-letter words (10)
-        "BAUM", "HAUS", "BALL", "BOOT", "TANZ", "HAND", "WOLF", "BROT", "GELD", "WIND"
+        "BAUM", "HAUS", "BALL", "BOOT", "TANZ", "FUSS", "WOLF", "BROT", "GELD", "WIND"
     )
 
     private val germanStar2 = listOf(

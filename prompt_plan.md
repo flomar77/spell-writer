@@ -63,7 +63,7 @@
 
 ## Phase 4: Polish
 
-- [ ] 18. [CLEANUP] Remove SpellKeyboard.kt file and any unused imports/references. Update any documentation referencing the custom keyboard.
+- [ ] 18. [CLEANUP] Remove any unused imports/references. Update any documentation referencing the custom keyboard.
 
 - [ ] 19. [CHECK] Run full test suite and ask user to review changes
 

@@ -4,6 +4,9 @@ import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Unit tests for GameViewModel.
@@ -11,6 +14,8 @@ import org.junit.Test
  * Full integration testing in instrumentation tests.
  * Story 2.1: Enhanced with session management tests for 20-word learning sessions
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], instrumentedPackages = ["androidx.loader.content"])
 class GameViewModelTest {
 
     @Test

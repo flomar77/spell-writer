@@ -252,8 +252,8 @@ class WordRepositoryTest {
         val wordsWithDefault = WordRepository.getWordsForStar(1)
         val wordsExplicitGerman = WordRepository.getWordsForStar(1, AppLanguage.GERMAN)
 
-        // Should be same since system is German
-        assertEquals("Default should use system language", wordsExplicitGerman, wordsWithDefault)
+        // Should contain same words since system is German (order may differ due to shuffling)
+        assertEquals("Default should use system language", wordsExplicitGerman.toSet(), wordsWithDefault.toSet())
     }
 
     // Helper function to separate words by length for testing
