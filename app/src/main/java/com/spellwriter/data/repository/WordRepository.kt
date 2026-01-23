@@ -97,16 +97,13 @@ object WordRepository {
 
         Log.d(TAG, "Loading words for star $star in $language mode")
 
-        // Get more words anyway
-        // FIXME: Should be put somewhere else: fetch longer list when app starts
-        wordsRepository?.fetchAndCacheWords(star, langCode)
-
+        // FIXME removed for test phase where new, different words should be added
         // First try to get from cache
-        val cachedWords = wordsRepository?.getCachedWords(star, langCode)
-        if (!cachedWords.isNullOrEmpty()) {
-            Log.d(TAG, "Using cached words for star $star ($language)")
-            return cachedWords
-        }
+//        val cachedWords = wordsRepository?.getCachedWords(star, langCode)
+//        if (!cachedWords.isNullOrEmpty()) {
+//            Log.d(TAG, "Using cached words for star $star ($language)")
+//            return cachedWords
+//        }
 
         // If not in cache, fetch from API
         val result = wordsRepository?.fetchAndCacheWords(star, langCode)

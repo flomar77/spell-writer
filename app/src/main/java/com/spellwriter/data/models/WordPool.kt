@@ -32,8 +32,8 @@ object WordPool {
     lateinit var repository: WordsRepository
     // German word lists
     private val germanStar1 = listOf(
-        // 3-letter words (10)
-        "OHR", "ARM", "EIS", "HUT", "ZUG", "TAG", "TON", "BAD", "NAH", "ORT",
+        // 3-letter words (10) - includes umlauts
+        "OHR", "ARM", "EIS", "HUT", "ZUG", "ÖDE", "TÜR", "SÜD", "FÜR", "ORT",
         // 4-letter words (10)
         "BAUM", "HAUS", "BALL", "BOOT", "TANZ", "FUSS", "WOLF", "BROT", "GELD", "WIND"
     )
@@ -138,6 +138,7 @@ object WordPool {
         val lang = if (language.startsWith("de")) "de" else "en"
 
         // Try cached words first
+        // FIXME get new words anyway, even with cached words. Do not save a word multiple times. Random Words
         if (::repository.isInitialized) {
             val cachedWords = repository.getCachedWords(starNumber, lang)
             if (cachedWords != null && cachedWords.size >= 20) {
