@@ -11,6 +11,7 @@ import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.SavedSession
 import com.spellwriter.data.models.SessionState
+import com.spellwriter.data.tracking.TimeoutManager
 import com.spellwriter.data.tracking.WordPerformanceTracker
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.data.repository.SessionRepository
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -69,13 +69,10 @@ class GameViewModel(
     val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
 
     // Timeout tracking for encouragement and failure animations
-    private val _lastInputTime = MutableStateFlow(System.currentTimeMillis())
-    private val lastInputTime: StateFlow<Long> = _lastInputTime.asStateFlow()
+    private val timeoutManager = TimeoutManager(viewModelScope)
 
-    private val _isEncouragementShown = MutableStateFlow(false)
-    val isEncouragementShown: StateFlow<Boolean> = _isEncouragementShown.asStateFlow()
-
-    private var timeoutJob: Job? = null
+    // Encouragement message exposed to UI
+    val encouragementMessage: StateFlow<String?> = timeoutManager.encouragementMessage
 
     // Celebration state management
     private val _showCelebration = MutableStateFlow(false)
@@ -101,7 +98,6 @@ class GameViewModel(
         viewModelScope.launch {
             loadWordsForStar()
         }
-        startTimeoutMonitoring()
     }
 
     /**
@@ -484,80 +480,27 @@ class GameViewModel(
     override fun onCleared() {
         Log.d(TAG, "Cleaning up GameViewModel resources")
         audioManager.release()
-        timeoutJob?.cancel()
+        timeoutManager.release()
         super.onCleared()
-    }
-
-    /**
-     * Start timeout monitoring coroutine.
-     */
-    private fun startTimeoutMonitoring() {
-        timeoutJob = viewModelScope.launch {
-            while (isActive) {
-                delay(TIMER_TICK_MS)
-                checkTimeouts()
-            }
-        }
-    }
-
-    /**
-     * Check for timeout conditions.
-     */
-    private fun checkTimeouts() {
-        val currentTime = System.currentTimeMillis()
-        val timeSinceLastInput = currentTime - _lastInputTime.value
-        val currentWord = _gameState.value.currentWord
-
-        if (currentWord.isEmpty()) {
-            return
-        }
-
-        if (_ghostExpression.value == GhostExpression.DEAD || _showCelebration.value) {
-            return
-        }
-
-        if (timeSinceLastInput >= ENCOURAGEMENT_TIMEOUT_MS && !_isEncouragementShown.value) {
-            showEncouragement()
-        }
-    }
-
-    /**
-     * Show encouraging ghost expression.
-     */
-    private fun showEncouragement() {
-        viewModelScope.launch {
-            _isEncouragementShown.value = true
-
-            _ghostExpression.value = GhostExpression.ENCOURAGING
-
-            delay(2000)
-
-            _ghostExpression.value = GhostExpression.NEUTRAL
-        }
     }
 
     /**
      * Reset timeout timers.
      */
     fun resetTimeouts() {
-        _lastInputTime.value = System.currentTimeMillis()
-        _isEncouragementShown.value = false
+        timeoutManager.resetTimeouts()
     }
 
     /**
      * Pause timeout monitoring.
      */
     private fun pauseTimeouts() {
-        timeoutJob?.cancel()
-        timeoutJob = null
-        Log.d(TAG, "Timeout monitoring paused")
+        timeoutManager.pauseTimeouts()
     }
 
     companion object {
         private const val TAG = "GameViewModel"
 
-        const val ENCOURAGEMENT_TIMEOUT_MS = 8_000L
-        const val TIMER_TICK_MS = 1_000L
         const val WORD_COMPLETE_DISPLAY_DELAY_MS = 500L
     }
 }
