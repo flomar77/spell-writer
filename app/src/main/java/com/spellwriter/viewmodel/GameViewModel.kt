@@ -11,7 +11,7 @@ import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.SavedSession
 import com.spellwriter.data.models.SessionState
-import com.spellwriter.data.models.WordPerformance
+import com.spellwriter.data.tracking.WordPerformanceTracker
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.data.repository.SessionRepository
 import com.spellwriter.data.repository.WordRepository
@@ -91,14 +91,8 @@ class GameViewModel(
     private val _sessionState = MutableStateFlow(SessionState.ACTIVE)
     val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
-    // Internal tracking for session management
-    private val completedWords = mutableSetOf<String>()
-
     // Word performance tracking
-    private val wordPerformanceData = mutableMapOf<String, WordPerformance>()
-    private var currentWordStartTime: Long = 0L
-    private var currentWordAttempts: Int = 0
-    private var currentWordIncorrectAttempts: Int = 0
+    private val wordPerformanceTracker = WordPerformanceTracker()
 
     // Audio manager for TTS and sound effects
     private val audioManager = AudioManager(context, _currentLanguage.value)
@@ -115,14 +109,15 @@ class GameViewModel(
      */
     private suspend fun loadWordsForStar() {
         val words = WordRepository.getWordsForStar(starNumber, _currentLanguage.value)
-        completedWords.clear()
-        wordPerformanceData.clear()
-        startWordTracking(words.firstOrNull() ?: "")
+        wordPerformanceTracker.reset()
+
+        val firstWord = words.firstOrNull() ?: ""
+        wordPerformanceTracker.startWordTracking(firstWord)
 
         _gameState.update {
             it.copy(
                 wordPool = words,
-                currentWord = words.firstOrNull()?.uppercase() ?: "",
+                currentWord = firstWord.uppercase(),
                 wordsCompleted = 0,
                 typedLetters = "",
                 sessionComplete = false,
@@ -133,31 +128,6 @@ class GameViewModel(
 
         _ghostExpression.value = GhostExpression.NEUTRAL
         Log.d(TAG, "Loaded ${words.size} words for star $starNumber in ${_currentLanguage.value} mode")
-    }
-
-    /**
-     * Start tracking performance for a new word.
-     */
-    private fun startWordTracking(word: String) {
-        currentWordStartTime = System.currentTimeMillis()
-        currentWordAttempts = 0
-        currentWordIncorrectAttempts = 0
-    }
-
-    /**
-     * Save word performance data.
-     */
-    private fun saveWordPerformance(word: String, success: Boolean) {
-        val completionTime = System.currentTimeMillis() - currentWordStartTime
-        val performance = WordPerformance(
-            word = word,
-            attempts = currentWordAttempts,
-            incorrectAttempts = currentWordIncorrectAttempts,
-            completionTimeMs = completionTime,
-            success = success
-        )
-        wordPerformanceData[word] = performance
-        Log.d(TAG, "Word performance - $word: ${performance.getAccuracy()}% accuracy, ${completionTime}ms")
     }
 
     /**
@@ -217,7 +187,7 @@ class GameViewModel(
     private fun handleCorrectLetter(letter: Char) {
         Log.d(TAG, "Correct letter: $letter")
 
-        currentWordAttempts++
+        wordPerformanceTracker.recordCorrectAttempt()
 
         _gameState.update {
             it.copy(typedLetters = it.typedLetters + letter)
@@ -238,8 +208,7 @@ class GameViewModel(
     private fun handleIncorrectLetter(letter: Char) {
         Log.d(TAG, "Incorrect letter: $letter (expected: ${_gameState.value.currentWord[_gameState.value.typedLetters.length]})")
 
-        currentWordAttempts++
-        currentWordIncorrectAttempts++
+        wordPerformanceTracker.recordIncorrectAttempt()
 
         setGhostExpression(GhostExpression.UNHAPPY)
 
@@ -272,10 +241,10 @@ class GameViewModel(
         val currentWord = _gameState.value.currentWord
         Log.d(TAG, "Word completed: $currentWord")
 
-        saveWordPerformance(currentWord, success = true)
+        val performance = wordPerformanceTracker.completeWord(currentWord)
+        Log.d(TAG, "Word performance - $currentWord: ${performance.getAccuracy()}% accuracy, ${performance.completionTimeMs}ms")
 
-        completedWords.add(currentWord)
-        val newWordsCompleted = completedWords.size
+        val newWordsCompleted = wordPerformanceTracker.wordsCompletedCount.value
 
         val updatedFailedWords = _gameState.value.failedWords.filter { it != currentWord }
         val updatedCompletedWords = _gameState.value.completedWords + currentWord
@@ -326,7 +295,7 @@ class GameViewModel(
         val nextWord = currentRemaining.firstOrNull()
 
         if (nextWord != null) {
-            startWordTracking(nextWord)
+            wordPerformanceTracker.startWordTracking(nextWord)
         }
 
         viewModelScope.launch {
@@ -373,6 +342,9 @@ class GameViewModel(
         }
 
         Log.d(TAG, "Word failed: $currentWord")
+
+        val performance = wordPerformanceTracker.failWord(currentWord)
+        Log.d(TAG, "Word performance - $currentWord: ${performance.getAccuracy()}% accuracy, ${performance.completionTimeMs}ms")
 
         val currentFailedWords = _gameState.value.failedWords
         val updatedFailedWords = if (currentFailedWords.contains(currentWord)) {
@@ -474,8 +446,8 @@ class GameViewModel(
 
         val savedSession = SavedSession(
             starLevel = starNumber,
-            wordsCompleted = completedWords.size,
-            completedWords = completedWords.toList(),
+            wordsCompleted = wordPerformanceTracker.completedWords.size,
+            completedWords = wordPerformanceTracker.completedWords.toList(),
             remainingWords = currentState.remainingWords,
             currentWordIndex = currentWordIndex,
             timestamp = System.currentTimeMillis()
