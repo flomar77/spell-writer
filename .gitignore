@@ -8,6 +8,7 @@ gradlew.bat
 # AI
 _bmad
 .claude/commands/bmad/
+.aider*
 
 # Local configuration file (SDK path, etc)
 local.properties
@@ -44,3 +45,4 @@ captures/
 
 # Android Profiling
 *.hprof
+
