@@ -97,6 +97,10 @@ object WordRepository {
 
         Log.d(TAG, "Loading words for star $star in $language mode")
 
+        // Get more words anyway
+        // FIXME: Should be put somewhere else: fetch longer list when app starts
+        wordsRepository?.fetchAndCacheWords(star, langCode)
+
         // First try to get from cache
         val cachedWords = wordsRepository?.getCachedWords(star, langCode)
         if (!cachedWords.isNullOrEmpty()) {

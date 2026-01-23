@@ -8,9 +8,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.network.RetrofitInstance
+import com.spellwriter.data.repository.WordRepository.getSystemLanguage
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class WordsRepository(private val context: Context) {
@@ -31,6 +32,20 @@ class WordsRepository(private val context: Context) {
     /**
      * Fetch words from API and cache them.
      *
+     * @param lang Language code ("de" or "en")
+     * @return Result with list of words or error
+     */
+    suspend fun fetchAndCacheNewWords(language: AppLanguage = getSystemLanguage()) {
+        val langCode = when (language) {
+            AppLanguage.GERMAN -> "de"
+            AppLanguage.ENGLISH -> "en"
+        }
+        Log.d(TAG, "Loading words in $language mode")
+    }
+
+    /**
+     * Fetch words from API and cache them, based on stars and language.
+     *
      * @param star Star level (1, 2, or 3)
      * @param lang Language code ("de" or "en")
      * @return Result with list of words or error
@@ -43,7 +58,7 @@ class WordsRepository(private val context: Context) {
             val shortWords = api.getWords(number = 10, length = shortLength, lang = lang)
             val longWords = api.getWords(number = 10, length = longLength, lang = lang)
 
-            val allWords = (shortWords + longWords).map { it.uppercase() }
+            val allWords = (shortWords + longWords).map { it.uppercase() }.distinct()
 
             // Validate word count and lengths
             if (allWords.size < 20) {
@@ -63,7 +78,7 @@ class WordsRepository(private val context: Context) {
             }
 
             // Save to cache
-            saveWordsToCache(star, lang, validWords)
+            saveWordsToCache(star, lang, validWords.distinct())
 
             Log.i(TAG, "Successfully fetched and cached ${validWords.size} words for star $star ($lang)")
             Result.success(validWords)
@@ -83,6 +98,8 @@ class WordsRepository(private val context: Context) {
     suspend fun getCachedWords(star: Int, lang: String): List<String>? {
         return try {
             val prefs = context.dataStore.data.first()
+            val prefsAsString = prefs.toString()
+            Log.d(TAG, "Prefs in cache: $prefsAsString")
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
             val timestampKey = longPreferencesKey("words_star${star}_${lang}_timestamp")
 
@@ -113,7 +130,6 @@ class WordsRepository(private val context: Context) {
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
             val timestampKey = longPreferencesKey("words_star${star}_${lang}_timestamp")
             val wordsJson = json.encodeToString(words)
-
             context.dataStore.edit { prefs ->
                 prefs[wordsKey] = wordsJson
                 prefs[timestampKey] = System.currentTimeMillis()
@@ -127,6 +143,7 @@ class WordsRepository(private val context: Context) {
 
     /**
      * Get word lengths for a star level.
+     * FIXME This class actually doesnt need to know about Stars (single responsibility principle)
      */
     private fun getLengthsForStar(star: Int): Pair<Int, Int> {
         return when (star) {
@@ -136,4 +153,5 @@ class WordsRepository(private val context: Context) {
             else -> 3 to 4
         }
     }
+    private fun getAllLength() = listOf(3,4,5,6)
 }
