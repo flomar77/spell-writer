@@ -1,12 +1,10 @@
 package com.spellwriter.viewmodel
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spellwriter.audio.SoundManager
+import com.spellwriter.audio.AudioManager
 import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
@@ -25,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /**
  * ViewModel for game screen gameplay logic.
@@ -103,54 +100,14 @@ class GameViewModel(
     private var currentWordAttempts: Int = 0
     private var currentWordIncorrectAttempts: Int = 0
 
-    // Audio components
-    private var tts: TextToSpeech? = null
-    private var isTTSReady = false
-    private val soundManager = SoundManager(context)
+    // Audio manager for TTS and sound effects
+    private val audioManager = AudioManager(context, _currentLanguage.value)
 
     init {
-        initializeTTS()
         viewModelScope.launch {
             loadWordsForStar()
         }
         startTimeoutMonitoring()
-    }
-
-    /**
-     * Initialize TextToSpeech with appropriate locale.
-     * Sets up TTS asynchronously with OnInitListener.
-     */
-    private fun initializeTTS() {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val locale = getTTSLocale()
-                val result = tts?.setLanguage(locale)
-                isTTSReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                        result != TextToSpeech.LANG_NOT_SUPPORTED
-
-                if (isTTSReady) {
-                    tts?.setSpeechRate(0.9f)
-                    Log.d(TAG, "TTS initialized successfully with locale: $locale")
-                    speakCurrentWord()
-                } else {
-                    Log.w(TAG, "TTS language not supported: $locale - continuing without audio")
-                }
-            } else {
-                Log.w(TAG, "TTS initialization failed - continuing without audio")
-            }
-        }
-    }
-
-    /**
-     * Get appropriate TTS locale based on app language.
-     *
-     * @return Locale.GERMANY for German, Locale.US for English
-     */
-    private fun getTTSLocale(): Locale {
-        return when (_currentLanguage.value) {
-            AppLanguage.GERMAN -> Locale.GERMANY
-            AppLanguage.ENGLISH -> Locale.US
-        }
     }
 
     /**
@@ -209,34 +166,18 @@ class GameViewModel(
     fun speakCurrentWord() {
         val word = _gameState.value.currentWord
 
-        if (word.isEmpty()) {
-            Log.w(TAG, "No current word to speak")
-            return
-        }
-
-        if (isTTSReady && tts != null) {
-            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {
-                    _isSpeaking.value = true
-                    Log.d(TAG, "TTS started speaking: $utteranceId")
-                }
-
-                override fun onDone(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    Log.d(TAG, "TTS finished speaking: $utteranceId")
-                }
-
-                override fun onError(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    Log.w(TAG, "TTS error for utterance: $utteranceId")
-                }
-            })
-
-            tts?.speak(word, TextToSpeech.QUEUE_FLUSH, null, "word_${System.currentTimeMillis()}")
-            Log.d(TAG, "Speaking word: $word")
-        } else {
-            Log.w(TAG, "TTS not ready - continuing without audio")
-        }
+        audioManager.speakWord(
+            word = word,
+            onStart = {
+                _isSpeaking.value = true
+            },
+            onDone = {
+                _isSpeaking.value = false
+            },
+            onError = {
+                _isSpeaking.value = false
+            }
+        )
     }
 
     /**
@@ -284,7 +225,7 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.HAPPY)
 
-        soundManager.playSuccess()
+        audioManager.playSuccess()
 
         if (_gameState.value.typedLetters == _gameState.value.currentWord) {
             onWordCompleted()
@@ -302,7 +243,7 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.UNHAPPY)
 
-        soundManager.playError()
+        audioManager.playError()
     }
 
     /**
@@ -570,9 +511,7 @@ class GameViewModel(
      */
     override fun onCleared() {
         Log.d(TAG, "Cleaning up GameViewModel resources")
-        tts?.stop()
-        tts?.shutdown()
-        soundManager.release()
+        audioManager.release()
         timeoutJob?.cancel()
         super.onCleared()
     }
