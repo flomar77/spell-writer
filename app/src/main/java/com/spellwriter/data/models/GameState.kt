@@ -21,9 +21,8 @@ data class GameState(
     val currentWord: String = "",
     val typedLetters: String = "",
     val wordsCompleted: Int = 0,
-    val sessionStars: Int = 0,  // Always 0 until Story 2.4
+    val sessionStars: Int = 0,
     val wordPool: List<String> = emptyList(),
-    // Story 2.1: Session tracking fields
     val sessionComplete: Boolean = false,
     val remainingWords: List<String> = emptyList(),
     val failedWords: List<String> = emptyList(),

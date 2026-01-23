@@ -779,18 +779,6 @@ class GameViewModel(
         Log.d(TAG, "Timeout monitoring paused")
     }
 
-    /**
-     * Story 3.2: Resume timeout monitoring (AC5).
-     * Restarts timeout system after celebrations or animations.
-     */
-    private fun resumeTimeouts() {
-        if (timeoutJob == null) {
-            startTimeoutMonitoring()
-            resetTimeouts()  // Fresh start after resume
-            Log.d(TAG, "Timeout monitoring resumed")
-        }
-    }
-
     companion object {
         private const val TAG = "GameViewModel"
 

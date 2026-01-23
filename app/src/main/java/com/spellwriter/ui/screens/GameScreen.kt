@@ -1,6 +1,5 @@
 package com.spellwriter.ui.screens
 
-import com.spellwriter.ui.components.LanguageSwitcher
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -33,7 +32,6 @@ import com.spellwriter.ui.components.CelebrationSequence
 import com.spellwriter.ui.components.CompletedWordsList
 import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.Grimoire
-import com.spellwriter.ui.components.SpellKeyboard
 import com.spellwriter.ui.components.StarProgress
 import com.spellwriter.viewmodel.GameViewModel
 
@@ -150,7 +148,7 @@ fun GameScreen(
             ) {
                 // Left side: Session stars
                 StarProgress(
-                    earnedStars = gameState.sessionStars,
+                    completedStars = currentProgress.wizardStars,
                     modifier = Modifier.padding(end = 8.dp)
                 )
 

@@ -11,7 +11,7 @@ import org.junit.runner.RunWith
 
 /**
  * UI tests for StarProgress component (Story 1.3).
- * Tests session star display with 3 stars (0-3 earned).
+ * Tests session star display with 3 stars (0-3 completed).
  */
 @RunWith(AndroidJUnit4::class)
 class StarProgressTest {
@@ -22,7 +22,7 @@ class StarProgressTest {
     @Test
     fun starProgress_displaysThreeStars() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 0)
+            StarProgress(completedStars = 0)
         }
 
         // Should display 3 stars (3, 2, 1 from top to bottom)
@@ -32,64 +32,64 @@ class StarProgressTest {
     }
 
     @Test
-    fun starProgress_showsZeroStarsEarned() {
+    fun starProgress_showsZeroStarsCompleted() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 0)
+            StarProgress(completedStars = 0)
         }
 
-        // No stars should have "earned" in description
-        composeTestRule.onAllNodesWithContentDescription("earned", substring = true).assertCountEquals(0)
+        // No stars should have "completed" in description
+        composeTestRule.onAllNodesWithContentDescription("completed", substring = true).assertCountEquals(0)
     }
 
     @Test
-    fun starProgress_showsOneStarEarned() {
+    fun starProgress_showsOneStarCompleted() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 1)
+            StarProgress(completedStars = 1)
         }
 
-        // Star 1 should be earned
-        composeTestRule.onNodeWithContentDescription("Session star 1 earned").assertExists()
+        // Star 1 should be completed
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed").assertExists()
 
-        // Stars 2 and 3 should not be earned
+        // Stars 2 and 3 should not be completed
         composeTestRule.onNodeWithContentDescription("Session star 2").assertExists()
         composeTestRule.onNodeWithContentDescription("Session star 3").assertExists()
     }
 
     @Test
-    fun starProgress_showsTwoStarsEarned() {
+    fun starProgress_showsTwoStarsCompleted() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 2)
+            StarProgress(completedStars = 2)
         }
 
-        // Stars 1 and 2 should be earned
-        composeTestRule.onNodeWithContentDescription("Session star 1 earned").assertExists()
-        composeTestRule.onNodeWithContentDescription("Session star 2 earned").assertExists()
+        // Stars 1 and 2 should be completed
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 2 completed").assertExists()
 
-        // Star 3 should not be earned
+        // Star 3 should not be completed
         composeTestRule.onNodeWithContentDescription("Session star 3").assertExists()
     }
 
     @Test
-    fun starProgress_showsAllThreeStarsEarned() {
+    fun starProgress_showsAllThreeStarsCompleted() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 3)
+            StarProgress(completedStars = 3)
         }
 
-        // All 3 stars should be earned
-        composeTestRule.onNodeWithContentDescription("Session star 1 earned").assertExists()
-        composeTestRule.onNodeWithContentDescription("Session star 2 earned").assertExists()
-        composeTestRule.onNodeWithContentDescription("Session star 3 earned").assertExists()
+        // All 3 stars should be completed
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 2 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 3 completed").assertExists()
     }
 
     @Test
     fun starProgress_starsHaveCorrectSize() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 1)
+            StarProgress(completedStars = 1)
         }
 
         // Stars should be 40dp (smaller than home screen stars)
         // We'll verify one star as a representative sample
-        composeTestRule.onNodeWithContentDescription("Session star 1 earned")
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed")
             .assertHeightIsAtLeast(40.dp)
             .assertWidthIsAtLeast(40.dp)
     }
@@ -97,13 +97,13 @@ class StarProgressTest {
     @Test
     fun starProgress_isVerticallyArranged() {
         composeTestRule.setContent {
-            StarProgress(earnedStars = 2)
+            StarProgress(completedStars = 2)
         }
 
         // Verify all 3 stars exist in vertical arrangement
         // The component should use a Column layout
         composeTestRule.onNodeWithContentDescription("Session star 3").assertExists()
-        composeTestRule.onNodeWithContentDescription("Session star 2 earned").assertExists()
-        composeTestRule.onNodeWithContentDescription("Session star 1 earned").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 2 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed").assertExists()
     }
 }

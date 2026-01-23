@@ -218,4 +218,21 @@ class GameScreenLayoutTest {
         composeTestRule.onNodeWithText("0/20").assertExists()
         composeTestRule.onNodeWithContentDescription("Ghost").assertExists()
     }
+
+    @Test
+    fun gameScreen_displaysCompletedStarsFromProgress() {
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 3,
+                currentProgress = com.spellwriter.data.models.Progress(wizardStars = 2),
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Stars 1 and 2 should show as completed
+        composeTestRule.onNodeWithContentDescription("Session star 1 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 2 completed").assertExists()
+        composeTestRule.onNodeWithContentDescription("Session star 3").assertExists()
+    }
 }

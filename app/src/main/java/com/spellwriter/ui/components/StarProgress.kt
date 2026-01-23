@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun StarProgress(
-    earnedStars: Int,  // 0-3 stars earned in current session
+    completedStars: Int,  // 0-3 stars completed (persistent progress)
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -33,12 +33,12 @@ fun StarProgress(
     ) {
         repeat(3) { index ->
             val starNumber = 3 - index  // Display from top to bottom: 3, 2, 1
-            val isEarned = starNumber <= earnedStars
+            val isCompleted = starNumber <= completedStars
 
             Icon(
-                imageVector = if (isEarned) Icons.Filled.Star else Icons.Outlined.Star,
-                contentDescription = "Session star $starNumber${if (isEarned) " earned" else ""}",
-                tint = if (isEarned) Color(0xFFFFD700) else Color.Gray,
+                imageVector = if (isCompleted) Icons.Filled.Star else Icons.Outlined.Star,
+                contentDescription = "Session star $starNumber${if (isCompleted) " completed" else ""}",
+                tint = if (isCompleted) Color(0xFFFFD700) else Color.Gray,
                 modifier = Modifier.size(40.dp)  // Smaller than home screen stars (56dp)
             )
         }
