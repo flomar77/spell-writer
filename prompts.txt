@@ -1,6 +1,6 @@
-1. Prompt to build a prompt_plan.md but, using new requirements
+1. Prompt to build a prompt_plan.md but, using requirements
 ```
-Read the attached new_requirements.md and generate a prompt_plan.md with TDD-focused
+Read the attached requirements.md and generate a prompt_plan.md with TDD-focused
 implementation steps.
 
 For each feature in the spec:
