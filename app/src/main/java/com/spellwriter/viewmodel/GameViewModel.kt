@@ -32,6 +32,15 @@ import kotlinx.coroutines.launch
  * Story 2.1: 20-word learning sessions with retry logic and session completion
  * Story 2.3: Progress persistence and word performance tracking
  * Story 3.1: Session control and exit flow with session persistence
+ * Hint Feature: Grey hint letters after 5 consecutive failures to help young learners
+ *
+ * **Hint Letter Feature:**
+ * - Tracks consecutive failures at current position (consecutiveFailuresAtCurrentPosition)
+ * - Shows grey hint letter after exactly 5 consecutive incorrect attempts
+ * - Hint displays for 2 seconds then auto-clears
+ * - Counter resets on correct letter or after hint shown
+ * - Hint clears immediately on word completion/failure
+ * - Bounds checking prevents crashes at word boundaries
  *
  * @param context Application context for TTS and SoundManager
  * @param starNumber Star level (1, 2, or 3) determining word difficulty
@@ -91,7 +100,14 @@ class GameViewModel(
     // Word performance tracking
     private val wordPerformanceTracker = WordPerformanceTracker()
 
-    // Hint letter tracking - consecutive failures at current position
+    /**
+     * Tracks consecutive incorrect letter attempts at the current position.
+     * When this counter reaches 5, a grey hint letter is displayed to help
+     * the young learner. Counter resets to 0 when:
+     * - Correct letter is typed
+     * - Hint is shown
+     * - Word completes or fails
+     */
     private var consecutiveFailuresAtCurrentPosition = 0
 
     // Audio manager for TTS and sound effects

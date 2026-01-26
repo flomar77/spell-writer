@@ -2,10 +2,20 @@ package com.spellwriter.data.models
 
 /**
  * Hint state for displaying hint letters after consecutive failures.
- * Shows a grey letter at the current position to help young learners.
  *
- * @param letter The letter to display as a hint
- * @param positionIndex The index position where the hint should appear
+ * After 5 consecutive incorrect letter attempts at the same position,
+ * a grey hint letter appears briefly to help young learners. The hint
+ * automatically fades out after 2 seconds.
+ *
+ * **Behavior:**
+ * - Triggers after exactly 5 consecutive failures at current position
+ * - Displays correct letter in grey (60% alpha) with fade animations
+ * - Auto-clears after 2000ms timeout
+ * - Counter resets on correct letter or hint display
+ * - Clears immediately on word completion or failure
+ *
+ * @param letter The correct letter to display as a hint
+ * @param positionIndex The index position where the hint should appear (0-based)
  */
 data class HintState(
     val letter: Char,
