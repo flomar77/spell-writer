@@ -21,7 +21,7 @@
 
 ### Feature: Consecutive failure tracking and hint triggering
 
-- [ ] 27. [TEST] Write tests for hint letter logic in GameViewModel that verify:
+- [x] 27. [TEST] Write tests for hint letter logic in GameViewModel that verify:
   - Counter increments on incorrect letter
   - Counter resets to 0 on correct letter
   - Hint shows (hintState is set) after 5 consecutive failures
@@ -29,17 +29,17 @@
   - Counter resets after showing hint
   - Position out of bounds is handled safely
 
-- [ ] 28. [IMPL] Add consecutiveFailuresAtCurrentPosition variable to GameViewModel
+- [x] 28. [IMPL] Add consecutiveFailuresAtCurrentPosition variable to GameViewModel
 
-- [ ] 29. [IMPL] Update handleIncorrectLetter() to increment counter and trigger hint at 5 failures
+- [x] 29. [IMPL] Update handleIncorrectLetter() to increment counter and trigger hint at 5 failures
 
-- [ ] 30. [IMPL] Update handleCorrectLetter() to reset counter to 0
+- [x] 30. [IMPL] Update handleCorrectLetter() to reset counter to 0
 
-- [ ] 31. [IMPL] Add showHintLetter() method with bounds checking and state update
+- [x] 31. [IMPL] Add showHintLetter() method with bounds checking and state update
 
-- [ ] 32. [CHECK] Run tests and verify hint triggering logic works correctly
+- [x] 32. [CHECK] Run tests and verify hint triggering logic works correctly
 
-- [ ] 33. [COMMIT] Commit with message `feat: add consecutive failure tracking and hint triggering logic` if user agreed
+- [x] 33. [COMMIT] Commit with message `feat: add consecutive failure tracking and hint triggering logic` if user agreed
 
 ### Feature: Hint auto-clear after timeout
 
