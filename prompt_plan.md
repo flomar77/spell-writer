@@ -43,72 +43,72 @@
 
 ### Feature: Hint auto-clear after timeout
 
-- [ ] 34. [TEST] Write tests for hint auto-clear that verify:
+- [x] 34. [TEST] Write tests for hint auto-clear that verify:
   - Hint clears after 2000ms delay
   - clearHintLetter() sets hintState to null
   - Multiple rapid hints don't cause state corruption
 
-- [ ] 35. [IMPL] Add clearHintLetter() method to GameViewModel
+- [x] 35. [IMPL] Add clearHintLetter() method to GameViewModel
 
-- [ ] 36. [IMPL] Update showHintLetter() to launch coroutine with 2000ms delay then clear
+- [x] 36. [IMPL] Update showHintLetter() to launch coroutine with 2000ms delay then clear
 
-- [ ] 37. [CHECK] Run tests with coroutine timing verification
+- [x] 37. [CHECK] Run tests with coroutine timing verification
 
-- [ ] 38. [COMMIT] Commit with message `feat: auto-clear hint letter after 2 second display` if user agreed
+- [x] 38. [COMMIT] Commit with message `feat: auto-clear hint letter after 2 second display` if user agreed
 
 ### Feature: Hint clearing on word transitions
 
-- [ ] 39. [TEST] Write tests for hint state cleanup that verify:
+- [x] 39. [TEST] Write tests for hint state cleanup that verify:
   - Hint clears when word completes
   - Hint clears when word fails
   - Counter resets on word transitions
   - No hint persists across words
 
-- [ ] 40. [IMPL] Update onWordCompleted() to clear hintState and reset counter
+- [x] 40. [IMPL] Update onWordCompleted() to clear hintState and reset counter
 
-- [ ] 41. [IMPL] Update onWordFailed() to clear hintState and reset counter
+- [x] 41. [IMPL] Update onWordFailed() to clear hintState and reset counter
 
-- [ ] 42. [CHECK] Run full ViewModel test suite
+- [x] 42. [CHECK] Run full ViewModel test suite
 
-- [ ] 43. [COMMIT] Commit with message `feat: clear hint state on word completion and failure` if user agreed
+- [x] 43. [COMMIT] Commit with message `feat: clear hint state on word completion and failure` if user agreed
 
 ## Phase 3: UI Implementation
 
 ### Feature: Grimoire hint letter display
 
-- [ ] 44. [TEST] Write UI tests for Grimoire hint display that verify:
+- [x] 44. [TEST] Write UI tests for Grimoire hint display that verify:
   - Hint letter displays at correct position
   - Hint letter has grey color with 60% alpha
   - Hint doesn't interfere with typed letters
   - Display length extends to include hint position
   - AnimatedVisibility triggers for hints
 
-- [ ] 45. [IMPL] Add hintState parameter to Grimoire composable signature
+- [x] 45. [IMPL] Add hintState parameter to Grimoire composable signature
 
-- [ ] 46. [IMPL] Update letter display logic to handle both typed letters and hint letters
+- [x] 46. [IMPL] Update letter display logic to handle both typed letters and hint letters
 
-- [ ] 47. [IMPL] Add AnimatedVisibility with fadeIn/fadeOut for hint letters
+- [x] 47. [IMPL] Add AnimatedVisibility with fadeIn/fadeOut for hint letters
 
-- [ ] 48. [IMPL] Apply grey color with alpha to hint letter text
+- [x] 48. [IMPL] Apply grey color with alpha to hint letter text
 
-- [ ] 49. [CHECK] Run UI tests and verify visual rendering
+- [x] 49. [CHECK] Run UI tests and verify visual rendering
 
-- [ ] 50. [COMMIT] Commit with message `feat: add grey hint letter display in Grimoire with fade animations` if user agreed
+- [x] 50. [COMMIT] Commit with message `feat: add grey hint letter display in Grimoire with fade animations` if user agreed
 
 ### Feature: GameScreen integration
 
-- [ ] 51. [TEST] Write integration tests that verify:
+- [x] 51. [TEST] Write integration tests that verify:
   - Grimoire receives hintState from gameState
   - Hint appears after 5 wrong letters
   - Hint displays in grey
   - Hint disappears after timeout
   - Typed letters work normally alongside hints
 
-- [ ] 52. [IMPL] Update Grimoire call in GameScreen to pass gameState.hintState
+- [x] 52. [IMPL] Update Grimoire call in GameScreen to pass gameState.hintState
 
-- [ ] 53. [CHECK] Run full integration test suite
+- [x] 53. [CHECK] Run full integration test suite
 
-- [ ] 54. [COMMIT] Commit with message `feat: integrate hint state from ViewModel to Grimoire display` if user agreed
+- [x] 54. [COMMIT] Commit with message `feat: integrate hint state from ViewModel to Grimoire display` if user agreed
 
 ## Phase 4: Edge Cases and Polish
 
