@@ -114,33 +114,33 @@
 
 ### Feature: Edge case handling
 
-- [ ] 55. [TEST] Write edge case tests that verify:
+- [x] 55. [TEST] Write edge case tests that verify:
   - Position out of bounds doesn't crash
   - Rapid typing doesn't corrupt state
   - Multiple hints at same position work correctly
   - Word change during hint display doesn't leak state
 
-- [ ] 56. [IMPL] Add/verify bounds checking in showHintLetter()
+- [x] 56. [IMPL] Add/verify bounds checking in showHintLetter()
 
-- [ ] 57. [IMPL] Ensure state transitions are atomic and safe
+- [x] 57. [IMPL] Ensure state transitions are atomic and safe
 
-- [ ] 58. [CHECK] Run all edge case tests
+- [x] 58. [CHECK] Run all edge case tests
 
-- [ ] 59. [COMMIT] Commit with message `fix: add bounds checking and state safety for hint letters` if user agreed
+- [x] 59. [COMMIT] Commit with message `fix: add bounds checking and state safety for hint letters` if user agreed
 
 ### Feature: Final polish and verification
 
-- [ ] 60. [CLEANUP] Add missing imports (fadeOut animation)
+- [x] 60. [CLEANUP] Add missing imports (fadeOut animation)
 
-- [ ] 61. [CLEANUP] Verify all logging statements are appropriate
+- [x] 61. [CLEANUP] Verify all logging statements are appropriate
 
-- [ ] 62. [CHECK] Run complete test suite (`./gradlew test` and `./gradlew connectedAndroidTest`)
+- [x] 62. [CHECK] Run complete test suite (`./gradlew test` and `./gradlew connectedAndroidTest`)
 
-- [ ] 63. [COMMIT] Commit with message `chore: polish hint letter implementation` if user agreed
+- [x] 63. [COMMIT] Commit with message `chore: polish hint letter implementation` if user agreed
 
 ## Phase 5: Manual Testing and Documentation
 
-- [ ] 64. [VERIFY] Manual device/emulator testing:
+- [x] 64. [VERIFY] Manual device/emulator testing:
   - Start game with word "CAT"
   - Type 'Z' five times → grey 'C' appears
   - Verify fade in animation (300ms)
@@ -153,9 +153,9 @@
   - Test at different positions (0, 1, 2+)
   - Verify no crashes or memory leaks
 
-- [ ] 65. [DOCS] Update inline code comments to document hint feature
+- [x] 65. [DOCS] Update inline code comments to document hint feature
 
-- [ ] 66. [COMMIT] Final commit with message `docs: document hint letter feature in code comments` if needed
+- [x] 66. [COMMIT] Final commit with message `docs: document hint letter feature in code comments` if needed
 
 ## Summary
 
