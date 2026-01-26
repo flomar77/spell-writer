@@ -208,4 +208,78 @@ class HintLetterBehaviorTest {
         assertEquals("Hint position should be 1", 1, hintState!!.positionIndex)
         assertEquals("Hint letter should match position 1", currentWord[1], hintState.letter)
     }
+
+    @Test
+    fun rapidTyping_doesNotCorruptState() {
+        val currentWord = viewModel.gameState.value.currentWord
+
+        // Rapidly type 10 incorrect letters
+        repeat(10) {
+            viewModel.onLetterTyped('Z')
+        }
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Should have shown hint after 5 failures, counter reset
+        val hintState = viewModel.gameState.value.hintState
+        assertNotNull("Hint should be shown", hintState)
+        assertEquals("Hint should be at position 0", 0, hintState!!.positionIndex)
+        assertEquals("Hint should show correct letter", currentWord[0], hintState.letter)
+
+        // Typed letters should still be empty (no incorrect letters accepted)
+        assertEquals("No letters should be typed", "", viewModel.gameState.value.typedLetters)
+    }
+
+    @Test
+    fun multipleHintsAtSamePosition_workCorrectly() {
+        val currentWord = viewModel.gameState.value.currentWord
+
+        // Trigger first hint
+        repeat(5) {
+            viewModel.onLetterTyped('Z')
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull("First hint should be shown", viewModel.gameState.value.hintState)
+
+        // Wait for hint to clear
+        testDispatcher.scheduler.advanceTimeBy(2100)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull("Hint should be cleared", viewModel.gameState.value.hintState)
+
+        // Trigger second hint at same position
+        repeat(5) {
+            viewModel.onLetterTyped('Z')
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull("Second hint should be shown", viewModel.gameState.value.hintState)
+        assertEquals("Second hint should be at same position",
+            0, viewModel.gameState.value.hintState!!.positionIndex)
+    }
+
+    @Test
+    fun wordChangeBeforeHintClears_clearsHintImmediately() {
+        val currentWord = viewModel.gameState.value.currentWord
+
+        // Trigger hint
+        repeat(5) {
+            viewModel.onLetterTyped('Z')
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull("Hint should be shown", viewModel.gameState.value.hintState)
+
+        // Complete the word (simulating word change)
+        currentWord.forEach { letter ->
+            viewModel.onLetterTyped(letter)
+        }
+        testDispatcher.scheduler.advanceTimeBy(600)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Hint should be cleared when word completes
+        assertNull("Hint should be cleared on word change",
+            viewModel.gameState.value.hintState)
+    }
 }
