@@ -91,6 +91,9 @@ class GameViewModel(
     // Word performance tracking
     private val wordPerformanceTracker = WordPerformanceTracker()
 
+    // Hint letter tracking - consecutive failures at current position
+    private var consecutiveFailuresAtCurrentPosition = 0
+
     // Audio manager for TTS and sound effects
     private val audioManager = AudioManager(context, _currentLanguage.value)
 
@@ -184,6 +187,7 @@ class GameViewModel(
         Log.d(TAG, "Correct letter: $letter")
 
         wordPerformanceTracker.recordCorrectAttempt()
+        consecutiveFailuresAtCurrentPosition = 0
 
         _gameState.update {
             it.copy(typedLetters = it.typedLetters + letter)
@@ -205,10 +209,49 @@ class GameViewModel(
         Log.d(TAG, "Incorrect letter: $letter (expected: ${_gameState.value.currentWord[_gameState.value.typedLetters.length]})")
 
         wordPerformanceTracker.recordIncorrectAttempt()
+        consecutiveFailuresAtCurrentPosition++
+
+        if (consecutiveFailuresAtCurrentPosition >= 5) {
+            showHintLetter()
+        }
 
         setGhostExpression(GhostExpression.UNHAPPY)
 
         audioManager.playError()
+    }
+
+    /**
+     * Show hint letter after 5 consecutive failures.
+     * Displays the correct letter at the current position in grey.
+     * Auto-clears after 2 seconds.
+     */
+    private fun showHintLetter() {
+        val currentWord = _gameState.value.currentWord
+        val currentPosition = _gameState.value.typedLetters.length
+
+        if (currentPosition >= currentWord.length) {
+            Log.w(TAG, "Cannot show hint - position out of bounds")
+            return
+        }
+
+        val hintLetter = currentWord[currentPosition]
+        consecutiveFailuresAtCurrentPosition = 0
+
+        _gameState.update {
+            it.copy(hintState = com.spellwriter.data.models.HintState(hintLetter, currentPosition))
+        }
+
+        viewModelScope.launch {
+            delay(2000L)
+            clearHintLetter()
+        }
+    }
+
+    /**
+     * Clear the hint letter from display.
+     */
+    private fun clearHintLetter() {
+        _gameState.update { it.copy(hintState = null) }
     }
 
     /**
@@ -253,6 +296,8 @@ class GameViewModel(
             viewModelScope.launch {
                 delay(WORD_COMPLETE_DISPLAY_DELAY_MS)
 
+                consecutiveFailuresAtCurrentPosition = 0
+
                 _gameState.update {
                     it.copy(
                         wordsCompleted = newWordsCompleted,
@@ -260,7 +305,8 @@ class GameViewModel(
                         sessionComplete = true,
                         remainingWords = emptyList(),
                         failedWords = emptyList(),
-                        completedWords = updatedCompletedWords
+                        completedWords = updatedCompletedWords,
+                        hintState = null
                     )
                 }
 
@@ -297,6 +343,8 @@ class GameViewModel(
         viewModelScope.launch {
             delay(WORD_COMPLETE_DISPLAY_DELAY_MS)
 
+            consecutiveFailuresAtCurrentPosition = 0
+
             _gameState.update {
                 it.copy(
                     wordsCompleted = newWordsCompleted,
@@ -304,7 +352,8 @@ class GameViewModel(
                     typedLetters = "",
                     remainingWords = currentRemaining.drop(1),
                     failedWords = updatedFailedWords,
-                    completedWords = updatedCompletedWords
+                    completedWords = updatedCompletedWords,
+                    hintState = null
                 )
             }
 
@@ -359,9 +408,12 @@ class GameViewModel(
                 currentWord = nextWord?.uppercase() ?: currentWord,
                 typedLetters = "",
                 remainingWords = if (nextWord != null) insertedRemaining.drop(1) else insertedRemaining,
-                failedWords = updatedFailedWords
+                failedWords = updatedFailedWords,
+                hintState = null
             )
         }
+
+        consecutiveFailuresAtCurrentPosition = 0
 
         setGhostExpression(GhostExpression.DEAD, autoReset = false)
 
