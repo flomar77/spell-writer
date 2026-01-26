@@ -160,6 +160,29 @@ fun GameScreen(
                         typedLetters = gameState.typedLetters,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    // Native keyboard TextField for letter-by-letter input
+                    // The TextField value is always bound to validated typedLetters from ViewModel
+                    TextField(
+                        value = gameState.typedLetters,
+                        onValueChange = { newValue ->
+                            // Only process additions (when length increases)
+                            if (newValue.length > gameState.typedLetters.length) {
+                                // Extract the newly typed character and convert to uppercase
+                                val newChar = newValue.last().uppercaseChar()
+                                // Delegate to existing validation logic in ViewModel
+                                viewModel.onLetterTyped(newChar)
+                            }
+                            // Note: TextField value is always bound to gameState.typedLetters
+                            // If letter is incorrect, ViewModel won't update typedLetters,
+                            // causing TextField to reset to the validated state
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrectEnabled = false
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     // Completed words list under the Grimoire
                     CompletedWordsList(
                         completedWords = gameState.completedWords
@@ -208,31 +231,6 @@ fun GameScreen(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Native keyboard TextField for letter-by-letter input
-            // The TextField value is always bound to validated typedLetters from ViewModel
-            TextField(
-                value = gameState.typedLetters,
-                onValueChange = { newValue ->
-                    // Only process additions (when length increases)
-                    if (newValue.length > gameState.typedLetters.length) {
-                        // Extract the newly typed character and convert to uppercase
-                        val newChar = newValue.last().uppercaseChar()
-                        // Delegate to existing validation logic in ViewModel
-                        viewModel.onLetterTyped(newChar)
-                    }
-                    // Note: TextField value is always bound to gameState.typedLetters
-                    // If letter is incorrect, ViewModel won't update typedLetters,
-                    // causing TextField to reset to the validated state
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                    autoCorrectEnabled = false
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
         }
 
         // Story 2.4: Celebration overlay (AC1, AC2, AC3, AC4, AC6, AC7)

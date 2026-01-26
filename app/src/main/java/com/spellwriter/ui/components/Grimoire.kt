@@ -42,9 +42,9 @@ fun Grimoire(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1.5f)  // Wider than tall (book shape)
+            .aspectRatio(2.5f)  // Wider than tall (book shape)
             .border(
-                width = 3.dp,
+                width = 2.dp,
                 color = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(8.dp)
             )
