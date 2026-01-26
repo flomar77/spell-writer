@@ -1,7 +1,6 @@
 package com.spellwriter.viewmodel
 
 import com.spellwriter.data.models.GameState
-import com.spellwriter.data.models.GhostExpression
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -207,7 +206,6 @@ class GameViewModelTest {
     fun gameState_failedWordRetry_trackedCorrectly() {
         // Simulates a failed word being tracked and added back to pool
         val failedWord = "TREE"
-        val remainingBefore = listOf("FISH", "APPLE")
 
         // After failure, word should be in both lists
         val stateAfterFailure = GameState(
