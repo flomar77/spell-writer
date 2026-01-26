@@ -1,6 +1,18 @@
 package com.spellwriter.data.models
 
 /**
+ * Hint state for displaying hint letters after consecutive failures.
+ * Shows a grey letter at the current position to help young learners.
+ *
+ * @param letter The letter to display as a hint
+ * @param positionIndex The index position where the hint should appear
+ */
+data class HintState(
+    val letter: Char,
+    val positionIndex: Int
+)
+
+/**
  * Game state for spell-writing gameplay.
  * Holds all UI state managed by GameViewModel.
  * Story 1.4: Core Word Gameplay
@@ -16,6 +28,7 @@ package com.spellwriter.data.models
  * @param remainingWords Words not yet completed (decreases as words are completed) (AC1, AC4)
  * @param failedWords Words that were failed and need retry (AC3, AC5)
  * @param completedWords List of words completed in order (for display under Grimoire)
+ * @param hintState Optional hint state for displaying grey hint letters after consecutive failures
  */
 data class GameState(
     val currentWord: String = "",
@@ -26,5 +39,6 @@ data class GameState(
     val sessionComplete: Boolean = false,
     val remainingWords: List<String> = emptyList(),
     val failedWords: List<String> = emptyList(),
-    val completedWords: List<String> = emptyList()
+    val completedWords: List<String> = emptyList(),
+    val hintState: HintState? = null
 )
