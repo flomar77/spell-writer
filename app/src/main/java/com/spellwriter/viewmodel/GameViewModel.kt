@@ -237,6 +237,8 @@ class GameViewModel(
         val hintLetter = currentWord[currentPosition]
         consecutiveFailuresAtCurrentPosition = 0
 
+        Log.d(TAG, "Showing hint letter '$hintLetter' at position $currentPosition after 5 consecutive failures")
+
         _gameState.update {
             it.copy(hintState = com.spellwriter.data.models.HintState(hintLetter, currentPosition))
         }
