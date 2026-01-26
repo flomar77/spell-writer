@@ -158,6 +158,7 @@ fun GameScreen(
                 ) {
                     Grimoire(
                         typedLetters = gameState.typedLetters,
+                        hintState = gameState.hintState,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
