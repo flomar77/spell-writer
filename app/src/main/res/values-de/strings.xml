@@ -37,4 +37,8 @@
 
     <!-- Story 3.3: Language Indicator (AC7) -->
     <string name="language_name">Deutsch</string>
+
+    <!-- TTS Initialization -->
+    <string name="home_tts_loading">Android Stimme wird vorbereitet…</string>
+    <string name="home_tts_error">Android Stimme nicht verfügbar. Spiel ohne Audio.</string>
 </resources>
