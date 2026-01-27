@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.spellwriter.audio.AudioManager
+import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.WordPool
 import com.spellwriter.data.repository.ProgressRepository
@@ -25,6 +27,9 @@ import com.spellwriter.data.repository.WordsRepository
 import com.spellwriter.ui.screens.GameScreen
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 
 /**
@@ -81,6 +86,12 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
     var selectedStar by remember { mutableStateOf<Int?>(null) }  // Story 1.2: for replay
 
+    // TTS initialization state management
+    var audioManager by remember { mutableStateOf<AudioManager?>(null) }
+    var isTTSInitializing by remember { mutableStateOf(false) }
+    var ttsError by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
     // Track current language for locale-aware context
     var currentLanguage by remember { mutableStateOf(LanguageManager.getCurrentLanguage(context)) }
 
@@ -92,6 +103,54 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
     // Story 2.3: Load progress from repository (AC4, NFR3.3)
     val progress by progressRepository.progressFlow.collectAsState(initial = Progress())
 
+    // TTS initialization function
+    fun initializeTTS(starNumber: Int? = null) {
+        // Guard clause: prevent double-click
+        if (isTTSInitializing) return
+
+        // Reset state and start initialization
+        isTTSInitializing = true
+        ttsError = null
+
+        // Convert language string to AppLanguage enum
+        val appLanguage = when (currentLanguage) {
+            "de" -> AppLanguage.GERMAN
+            "en" -> AppLanguage.ENGLISH
+            else -> AppLanguage.ENGLISH // fallback
+        }
+
+        // Create AudioManager
+        audioManager = AudioManager(localizedContext, appLanguage)
+
+        // Launch coroutine with timeout
+        coroutineScope.launch {
+            val isReady = withTimeoutOrNull(5000L) {
+                // Wait for TTS to be ready
+                audioManager?.isTTSReady?.first { it }
+            }
+
+            if (isReady == true) {
+                // Success: navigate to game
+                isTTSInitializing = false
+                selectedStar = starNumber
+                currentScreen = Screen.Game
+            } else {
+                // Timeout: show error but still navigate
+                ttsError = localizedContext.getString(R.string.home_tts_error)
+                isTTSInitializing = false
+                selectedStar = starNumber
+                currentScreen = Screen.Game
+            }
+        }
+    }
+
+    // Cleanup AudioManager on app dispose
+    DisposableEffect(Unit) {
+        onDispose {
+            audioManager?.release()
+        }
+    }
+
     // Provide the localized context to all composables
     CompositionLocalProvider(LocalContext provides localizedContext) {
         when (currentScreen) {
@@ -99,17 +158,39 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
                 HomeScreen(
                     progress = progress,  // Story 1.2, 2.3
                     onPlayClick = {
-                        selectedStar = null  // Auto-select current star
-                        currentScreen = Screen.Game
+                        // Check if TTS is already ready
+                        if (audioManager?.isTTSReady?.value == true) {
+                            // Navigate immediately
+                            selectedStar = null
+                            currentScreen = Screen.Game
+                        } else {
+                            // Initialize TTS first
+                            initializeTTS(starNumber = null)
+                        }
                     },
                     onStarClick = { starNumber ->  // Story 1.2
-                        selectedStar = starNumber  // Replay specific star
-                        currentScreen = Screen.Game
+                        // Check if TTS is already ready
+                        if (audioManager?.isTTSReady?.value == true) {
+                            // Navigate immediately
+                            selectedStar = starNumber
+                            currentScreen = Screen.Game
+                        } else {
+                            // Initialize TTS first
+                            initializeTTS(starNumber = starNumber)
+                        }
                     },
                     onLanguageChanged = { newLanguage ->
+                        // Release existing AudioManager
+                        audioManager?.release()
+                        audioManager = null
+                        isTTSInitializing = false
+                        ttsError = null
+
                         // Update language state to trigger recomposition with new locale
                         currentLanguage = newLanguage
-                    }
+                    },
+                    isTTSInitializing = isTTSInitializing,
+                    ttsError = ttsError
                 )
             }
 
@@ -119,12 +200,14 @@ fun SpellWriterApp(progressRepository: ProgressRepository) {
                     isReplaySession = selectedStar != null,  // Story 1.2
                     progressRepository = progressRepository,  // Story 2.3
                     currentProgress = progress,  // Story 2.3
+                    audioManager = audioManager,  // Pass AudioManager for TTS
                     onBackPress = {
+                        // Keep audioManager in memory for reuse
                         currentScreen = Screen.Home
                     },
                     onStarComplete = { completedStar ->  // Story 1.2, 2.3
                         // Star completion now handled by GameViewModel persistence
-                        // Just navigate back to home
+                        // Keep audioManager in memory for reuse
                         currentScreen = Screen.Home
                     }
                 )

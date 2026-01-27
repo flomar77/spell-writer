@@ -174,7 +174,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
   - Test language change releases AudioManager and resets state
   - Test DisposableEffect releases AudioManager on app dispose
 
-- [ ] 87. [IMPL] Add TTS initialization state to MainActivity
+- [x] 87. [IMPL] Add TTS initialization state to MainActivity
   - Add state variables in SpellWriterApp composable (after currentScreen, selectedStar):
     ```kotlin
     var audioManager by remember { mutableStateOf<AudioManager?>(null) }
@@ -183,7 +183,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
     val coroutineScope = rememberCoroutineScope()
     ```
 
-- [ ] 88. [IMPL] Add initializeTTS function in SpellWriterApp
+- [x] 88. [IMPL] Add initializeTTS function in SpellWriterApp
   - Create function with Context and language parameters
   - Add double-click guard: `if (isTTSInitializing) return`
   - Set isTTSInitializing=true, ttsError=null
@@ -194,7 +194,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
   - Handle timeout: set error message, navigate anyway
   - Set selectedStar before navigation
 
-- [ ] 89. [IMPL] Update HomeScreen callbacks
+- [x] 89. [IMPL] Update HomeScreen callbacks
   - Pass isTTSInitializing and ttsError to HomeScreen
   - Update onPlayClick:
     - Check if audioManager?.isTTSReady?.value == true
@@ -208,12 +208,12 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
     - Reset ttsError to null
     - Update language and reload progress
 
-- [ ] 90. [IMPL] Update GameScreen navigation
+- [x] 90. [IMPL] Update GameScreen navigation
   - Pass audioManager to GameScreen
   - Keep audioManager in memory on onBackPress (don't release)
   - Keep audioManager in memory on onStarComplete (don't release)
 
-- [ ] 91. [IMPL] Add cleanup on dispose
+- [x] 91. [IMPL] Add cleanup on dispose
   - Add DisposableEffect(Unit) in SpellWriterApp
   - In onDispose: audioManager?.release()
 
