@@ -162,7 +162,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
 
 ## Phase 6: MainActivity TTS Initialization Logic
 
-- [ ] 86. [TEST] Write tests for MainActivity TTS initialization
+- [x] 86. [TEST] Write tests for MainActivity TTS initialization
   - Test audioManager state starts as null
   - Test initializeTTS creates AudioManager with correct language
   - Test initializeTTS sets isTTSInitializing=true during init
