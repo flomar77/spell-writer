@@ -31,6 +31,8 @@ import com.spellwriter.viewmodel.HomeViewModel
  * @param onStarClick Callback when user taps a star to replay that level (Story 1.2)
  * @param onLanguageChanged Callback when language is changed to trigger recomposition
  * @param modifier Optional modifier for the screen
+ * @param isTTSInitializing Whether TTS is currently initializing (shows loading UI)
+ * @param ttsError Error message if TTS initialization failed, null if successful
  */
 @Composable
 fun HomeScreen(
@@ -38,7 +40,9 @@ fun HomeScreen(
     onPlayClick: () -> Unit,
     onStarClick: (Int) -> Unit,
     onLanguageChanged: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isTTSInitializing: Boolean = false,
+    ttsError: String? = null
 ) {
 //    val context = LocalContext.current
 //    val viewModel = HomeViewModel(
@@ -51,7 +55,10 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        LanguageSwitcher(onLanguageChanged = onLanguageChanged)
+        LanguageSwitcher(
+            onLanguageChanged = onLanguageChanged,
+            enabled = !isTTSInitializing
+        )
         // App Title
         Text(
             text = stringResource(R.string.home_title),
@@ -83,15 +90,42 @@ fun HomeScreen(
             onStarClick = onStarClick
         )
 
+        // Loading indicator and error message
+        if (isTTSInitializing) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.home_tts_loading),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        if (ttsError != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = ttsError,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center
+            )
+        }
+
         // PLAY Button with accessibility
         Button(
             onClick = onPlayClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)  // Exceeds 48dp minimum per WCAG 2.1
-                .semantics {
-                    // Accessibility: contentDescription automatically provided by Text
-                },
+                .height(56.dp),  // Exceeds 48dp minimum per WCAG 2.1
+            enabled = !isTTSInitializing,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
             )
