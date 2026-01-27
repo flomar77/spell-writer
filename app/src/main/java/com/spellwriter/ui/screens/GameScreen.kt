@@ -46,11 +46,13 @@ import com.spellwriter.viewmodel.GameViewModel
  * Story 2.1: Added session completion detection and callback trigger (AC6)
  * Story 2.3: Added ProgressRepository integration for persistence (AC2, AC4)
  * Story 3.1: Added exit button and confirmation dialog (AC1, AC2, AC3, AC4, AC5)
+ * AudioManager Injection: Accepts optional AudioManager for TTS initialization at MainActivity level
  *
  * @param starNumber The star level (1, 2, or 3) to play (Story 1.2)
  * @param isReplaySession If true, don't update progress when completing (Story 1.2)
  * @param progressRepository Repository for persisting progress (Story 2.3)
  * @param currentProgress Current progress state (Story 2.3)
+ * @param audioManager Optional AudioManager instance for TTS (null if game runs without audio)
  * @param onBackPress Callback for back navigation
  * @param onStarComplete Callback when star is completed, passes completed star number (Story 1.2)
  * @param modifier Optional modifier for the screen
@@ -61,19 +63,22 @@ fun GameScreen(
     isReplaySession: Boolean = false,
     progressRepository: ProgressRepository? = null,
     currentProgress: Progress = Progress(),
+    audioManager: com.spellwriter.audio.AudioManager? = null,
     onBackPress: () -> Unit = {},
     onStarComplete: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     // Story 1.4, 2.3: GameViewModel integration with TTS and gameplay logic + persistence
+    // AudioManager Injection: Pass audioManager to GameViewModel and include in remember key
     val context = LocalContext.current
-    val viewModel = remember(starNumber, isReplaySession) {
+    val viewModel = remember(starNumber, isReplaySession, audioManager) {
         GameViewModel(
             context = context,
             starNumber = starNumber,
             isReplaySession = isReplaySession,
             progressRepository = progressRepository,
-            initialProgress = currentProgress
+            initialProgress = currentProgress,
+            audioManager = audioManager
         )
     }
     val gameState by viewModel.gameState.collectAsState()

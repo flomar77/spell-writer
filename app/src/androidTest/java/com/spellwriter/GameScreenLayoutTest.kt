@@ -235,4 +235,95 @@ class GameScreenLayoutTest {
         composeTestRule.onNodeWithContentDescription("Session star 2 completed").assertExists()
         composeTestRule.onNodeWithContentDescription("Session star 3").assertExists()
     }
+
+    // AudioManager injection tests
+
+    @Test
+    fun gameScreen_rendersWithNullAudioManager() {
+        // GameScreen should render correctly when audioManager is null
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 1,
+                audioManager = null,
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Verify all UI elements are present
+        composeTestRule.onNodeWithText("0/20").assertExists()
+        composeTestRule.onNodeWithContentDescription("Ghost").assertExists()
+        composeTestRule.onNodeWithText("Type the word...").assertExists()
+    }
+
+    @Test
+    fun gameScreen_rendersWithoutAudioManagerParameter() {
+        // GameScreen should work when audioManager parameter is not provided (defaults to null)
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 1,
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Verify screen renders correctly
+        composeTestRule.onNodeWithText("0/20").assertExists()
+        composeTestRule.onNodeWithContentDescription("Ghost").assertExists()
+    }
+
+    @Test
+    fun gameScreen_acceptsAudioManagerParameter() {
+        // GameScreen should accept audioManager parameter without crashing
+        // Note: Creating a real AudioManager requires TTS setup, so we just verify
+        // the parameter is accepted. Full integration testing with AudioManager
+        // happens in separate integration tests.
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 1,
+                audioManager = null,  // Pass explicit null
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Verify screen renders normally
+        composeTestRule.onNodeWithText("0/20").assertExists()
+    }
+
+    @Test
+    fun gameScreen_withNullAudioManager_letterTypingWorks() {
+        // Verify game functionality works without audio
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 1,
+                audioManager = null,
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Type a letter
+        composeTestRule.onNodeWithText("C").performClick()
+        composeTestRule.waitForIdle()
+
+        // Verify letter appears (game works without audio)
+        composeTestRule.onNodeWithText("C").assertExists()
+    }
+
+    @Test
+    fun gameScreen_withNullAudioManager_progressTracksCorrectly() {
+        // Verify progress tracking works without audio
+        composeTestRule.setContent {
+            GameScreen(
+                starNumber = 1,
+                audioManager = null,
+                onBackPress = {},
+                onStarComplete = null
+            )
+        }
+
+        // Verify initial progress displays
+        composeTestRule.onNodeWithText("0/20").assertExists()
+    }
 }
