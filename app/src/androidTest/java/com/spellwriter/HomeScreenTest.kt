@@ -178,4 +178,150 @@ class HomeScreenTest {
         composeTestRule.onNodeWithText("To win, write the words you will hear correctly").assertIsDisplayed()
         composeTestRule.onNodeWithText("PLAY").assertIsDisplayed()
     }
+
+    @Test
+    fun loadingIndicator_displaysWhenTTSInitializing() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = true
+                )
+            }
+        }
+
+        // Assert - Loading indicator should be visible
+        composeTestRule.onNodeWithText("Preparing voice...").assertExists()
+        composeTestRule.onNodeWithContentDescription("Loading progress").assertExists()
+    }
+
+    @Test
+    fun loadingText_displaysCorrectStringResource() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = true
+                )
+            }
+        }
+
+        // Assert - Loading text should match string resource
+        composeTestRule.onNodeWithText("Preparing voice...").assertExists()
+    }
+
+    @Test
+    fun linearProgressIndicator_rendersDuringLoading() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = true
+                )
+            }
+        }
+
+        // Assert - LinearProgressIndicator should be visible
+        composeTestRule.onNodeWithContentDescription("Loading progress").assertExists()
+    }
+
+    @Test
+    fun playButton_disabledWhenTTSInitializing() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = true
+                )
+            }
+        }
+
+        // Assert - Play button should be disabled
+        composeTestRule.onNodeWithText("PLAY").assertIsNotEnabled()
+    }
+
+    @Test
+    fun playButton_enabledWhenTTSNotInitializing() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = false
+                )
+            }
+        }
+
+        // Assert - Play button should be enabled
+        composeTestRule.onNodeWithText("PLAY").assertIsEnabled()
+    }
+
+    @Test
+    fun errorMessage_displaysWhenTTSErrorNotNull() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    ttsError = "TTS initialization failed"
+                )
+            }
+        }
+
+        // Assert - Error message should be visible
+        composeTestRule.onNodeWithText("TTS initialization failed").assertExists()
+    }
+
+    @Test
+    fun errorMessage_hiddenWhenTTSErrorNull() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    ttsError = null
+                )
+            }
+        }
+
+        // Assert - Error message should not be visible
+        composeTestRule.onNodeWithText("TTS initialization failed").assertDoesNotExist()
+    }
+
+    @Test
+    fun languageSwitcher_disabledDuringLoading() {
+        // Arrange & Act
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                HomeScreen(
+                    progress = com.spellwriter.data.models.Progress(),
+                    onPlayClick = {},
+                    onStarClick = {},
+                    isTTSInitializing = true
+                )
+            }
+        }
+
+        // Assert - Language buttons should be disabled
+        composeTestRule.onNodeWithText("EN").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("DE").assertIsNotEnabled()
+    }
 }
