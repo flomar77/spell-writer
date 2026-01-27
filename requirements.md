@@ -153,14 +153,14 @@ fun initializeTTS(context: Context, language: String) {
 
 **File:** `values/strings.xml`
 ```xml
-<string name="home_tts_loading">Preparing voice…</string>
-<string name="home_tts_error">Voice not available. Playing without audio.</string>
+<string name="home_tts_loading">Preparing Android voice…</string>
+<string name="home_tts_error">Android Voice not available. Playing without audio.</string>
 ```
 
 **File:** `values-de/strings.xml`
 ```xml
-<string name="home_tts_loading">Stimme wird vorbereitet…</string>
-<string name="home_tts_error">Stimme nicht verfügbar. Spiel ohne Audio.</string>
+<string name="home_tts_loading">Android Stimme wird vorbereitet…</string>
+<string name="home_tts_error">Android Stimme nicht verfügbar. Spiel ohne Audio.</string>
 ```
 
 ## Acceptance Criteria
