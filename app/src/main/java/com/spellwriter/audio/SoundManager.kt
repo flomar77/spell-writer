@@ -53,10 +53,7 @@ class SoundManager(private val context: Context) {
     fun playSuccess() {
         successPlayer?.let {
             try {
-                if (it.isPlaying) {
-                    it.stop()
-                    it.prepare()  // Prepare after stop for replay
-                }
+                // Simply reset to start and play - works reliably for rapid playback
                 it.seekTo(0)
                 it.start()
             } catch (e: Exception) {
@@ -73,10 +70,7 @@ class SoundManager(private val context: Context) {
     fun playError() {
         errorPlayer?.let {
             try {
-                if (it.isPlaying) {
-                    it.stop()
-                    it.prepare()  // Prepare after stop for replay
-                }
+                // Simply reset to start and play - works reliably for rapid playback
                 it.seekTo(0)
                 it.start()
             } catch (e: Exception) {

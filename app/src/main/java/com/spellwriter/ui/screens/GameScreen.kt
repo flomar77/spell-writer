@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.spellwriter.R
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -132,6 +133,35 @@ fun GameScreen(
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
+
+                // Audio control buttons (AC1, AC2)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = "Play word",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(24.dp))
+                    IconButton(
+                        onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Replay,
+                            contentDescription = "Repeat word",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
                 // Story 1.5: Ghost with expression and speaking animation (AC2, AC3, AC4, AC6)
                 Ghost(
                     expression = ghostExpression,
@@ -162,21 +192,47 @@ fun GameScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    // Local state for TextField to prevent immediate visual clearing on incorrect input
+                    // This fixes the hint counter issue on real devices (Samsung S20 FE)
+                    val textFieldValue = remember { mutableStateOf("") }
+
+                    // Track when a letter is typed to trigger sync-back after processing
+                    var letterTypedTrigger by remember { mutableStateOf(0) }
+
+                    // Sync TextField with validated state when word changes
+                    LaunchedEffect(gameState.currentWord) {
+                        textFieldValue.value = ""
+                    }
+
+                    // Sync TextField back to validated state after each letter attempt
+                    // Small delay allows the character to be visible briefly before clearing
+                    LaunchedEffect(letterTypedTrigger) {
+                        if (letterTypedTrigger > 0) {
+                            delay(100) // Brief delay to show the character
+                            textFieldValue.value = gameState.typedLetters
+                        }
+                    }
+
                     // Native keyboard TextField for letter-by-letter input
-                    // The TextField value is always bound to validated typedLetters from ViewModel
+                    // Uses local state for responsive UI while ViewModel validates
                     TextField(
-                        value = gameState.typedLetters,
+                        value = textFieldValue.value,
                         onValueChange = { newValue ->
                             // Only process additions (when length increases)
                             if (newValue.length > gameState.typedLetters.length) {
+                                // Update local state immediately to show character (responsive UI)
+                                textFieldValue.value = newValue
+
                                 // Extract the newly typed character and convert to uppercase
                                 val newChar = newValue.last().uppercaseChar()
+
                                 // Delegate to existing validation logic in ViewModel
                                 viewModel.onLetterTyped(newChar)
+
+                                // Trigger sync-back to validated state
+                                letterTypedTrigger++
                             }
-                            // Note: TextField value is always bound to gameState.typedLetters
-                            // If letter is incorrect, ViewModel won't update typedLetters,
-                            // causing TextField to reset to the validated state
                         },
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Characters,
@@ -189,7 +245,7 @@ fun GameScreen(
                         completedWords = gameState.completedWords
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     // Progressbar
                     Column(modifier = Modifier.weight(1f)) {
@@ -199,37 +255,6 @@ fun GameScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Audio control buttons (AC1, AC2)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Icon(
-                        Icons.Default.PlayArrow,
-                        contentDescription = "Play word",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(24.dp))
-                IconButton(
-                    onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Replay,
-                        contentDescription = "Repeat word",
-                        modifier = Modifier.size(32.dp)
-                    )
                 }
             }
         }

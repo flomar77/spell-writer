@@ -227,6 +227,8 @@ class GameViewModel(
         wordPerformanceTracker.recordIncorrectAttempt()
         consecutiveFailuresAtCurrentPosition++
 
+        Log.d(TAG, "Consecutive failures: $consecutiveFailuresAtCurrentPosition/5")
+
         if (consecutiveFailuresAtCurrentPosition >= 5) {
             showHintLetter()
         }
@@ -253,7 +255,7 @@ class GameViewModel(
         val hintLetter = currentWord[currentPosition]
         consecutiveFailuresAtCurrentPosition = 0
 
-        Log.d(TAG, "Showing hint letter '$hintLetter' at position $currentPosition after 5 consecutive failures")
+        Log.d(TAG, "✨ SHOWING HINT: '$hintLetter' at position $currentPosition")
 
         _gameState.update {
             it.copy(hintState = com.spellwriter.data.models.HintState(hintLetter, currentPosition))
@@ -261,6 +263,7 @@ class GameViewModel(
 
         viewModelScope.launch {
             delay(2000L)
+            Log.d(TAG, "Clearing hint after 2s")
             clearHintLetter()
         }
     }
@@ -269,6 +272,7 @@ class GameViewModel(
      * Clear the hint letter from display.
      */
     private fun clearHintLetter() {
+        Log.d(TAG, "Hint cleared")
         _gameState.update { it.copy(hintState = null) }
     }
 
