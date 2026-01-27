@@ -33,4 +33,8 @@
 
     <!-- Story 3.3: Language Indicator (AC7) -->
     <string name="language_name">English</string>
+
+    <!-- TTS Initialization -->
+    <string name="home_tts_loading">Preparing voice…</string>
+    <string name="home_tts_error">Voice not available. Playing without audio.</string>
 </resources>
