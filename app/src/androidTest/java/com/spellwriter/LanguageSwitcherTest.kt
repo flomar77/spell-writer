@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.spellwriter.data.models.Progress
+import com.spellwriter.ui.components.LanguageSwitcher
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
 import org.junit.Before
@@ -125,5 +126,100 @@ class LanguageSwitcherTest {
         // Both buttons should still exist
         composeTestRule.onNodeWithText("English").assertExists()
         composeTestRule.onNodeWithText("Deutsch").assertExists()
+    }
+
+    /**
+     * Tests for enabled/disabled states of LanguageSwitcher
+     */
+
+    @Test
+    fun languageSwitcher_buttonsEnabled_byDefault() {
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                LanguageSwitcher(onLanguageChanged = {})
+            }
+        }
+
+        // Both buttons should be enabled and clickable by default
+        composeTestRule.onNodeWithText("English").assertIsEnabled()
+        composeTestRule.onNodeWithText("Deutsch").assertIsEnabled()
+    }
+
+    @Test
+    fun languageSwitcher_buttonsDisabled_whenEnabledFalse() {
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                LanguageSwitcher(
+                    onLanguageChanged = {},
+                    enabled = false
+                )
+            }
+        }
+
+        // Both buttons should be disabled when enabled=false
+        composeTestRule.onNodeWithText("English").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("Deutsch").assertIsNotEnabled()
+    }
+
+    @Test
+    fun languageSwitcher_clickEventsBlocked_whenDisabled() {
+        var languageChanged = false
+        var newLanguage = ""
+
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                LanguageSwitcher(
+                    onLanguageChanged = { lang ->
+                        languageChanged = true
+                        newLanguage = lang
+                    },
+                    enabled = false
+                )
+            }
+        }
+
+        // Try to click disabled button
+        composeTestRule.onNodeWithText("Deutsch").performClick()
+
+        // Wait a moment to ensure click didn't trigger callback
+        composeTestRule.waitForIdle()
+
+        // Language change callback should NOT have been triggered
+        assert(!languageChanged) { "Language change callback should not be triggered when disabled" }
+        assert(newLanguage.isEmpty()) { "Language should not change when buttons are disabled" }
+    }
+
+    @Test
+    fun languageSwitcher_enabledStateToggle_updatesButtonState() {
+        var enabled by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            SpellWriterTheme {
+                LanguageSwitcher(
+                    onLanguageChanged = {},
+                    enabled = enabled
+                )
+            }
+        }
+
+        // Initially enabled
+        composeTestRule.onNodeWithText("English").assertIsEnabled()
+        composeTestRule.onNodeWithText("Deutsch").assertIsEnabled()
+
+        // Disable
+        enabled = false
+        composeTestRule.waitForIdle()
+
+        // Now disabled
+        composeTestRule.onNodeWithText("English").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("Deutsch").assertIsNotEnabled()
+
+        // Re-enable
+        enabled = true
+        composeTestRule.waitForIdle()
+
+        // Enabled again
+        composeTestRule.onNodeWithText("English").assertIsEnabled()
+        composeTestRule.onNodeWithText("Deutsch").assertIsEnabled()
     }
 }

@@ -16,7 +16,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun LanguageSwitcher(
     viewModel: LanguageViewModel = viewModel(),
-    onLanguageChanged: (String) -> Unit = {}
+    onLanguageChanged: (String) -> Unit = {},
+    enabled: Boolean = true
 ) {
     val context = LocalContext.current
     val currentLanguage by viewModel.currentLanguage.collectAsState()
@@ -51,6 +52,7 @@ fun LanguageSwitcher(
                 language = "en",
                 label = "English",
                 isSelected = currentLanguage == "en",
+                enabled = enabled,
                 onClick = {
                     LanguageManager.setLocale(context, "en")
                     viewModel.setLanguage("en")
@@ -62,6 +64,7 @@ fun LanguageSwitcher(
                 language = "de",
                 label = "Deutsch",
                 isSelected = currentLanguage == "de",
+                enabled = enabled,
                 onClick = {
                     LanguageManager.setLocale(context, "de")
                     viewModel.setLanguage("de")
@@ -77,10 +80,12 @@ fun LanguageButton(
     language: String,
     label: String,
     isSelected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
             contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
