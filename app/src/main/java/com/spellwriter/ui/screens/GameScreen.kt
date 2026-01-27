@@ -81,6 +81,7 @@ fun GameScreen(
     // Story 1.5: Ghost expression and speaking state (AC2, AC3, AC4, AC6)
     val ghostExpression by viewModel.ghostExpression.collectAsState()
     val isSpeaking by viewModel.isSpeaking.collectAsState()
+    val isTTSReady by viewModel.isTTSReady.collectAsState()
 
     // Story 2.4: Celebration state (AC6, AC7)
     val showCelebration by viewModel.showCelebration.collectAsState()
@@ -106,9 +107,10 @@ fun GameScreen(
         }
     }
 
-    // Automatically speak the word when it changes (on initial load and each new word)
-    LaunchedEffect(gameState.currentWord) {
-        if (gameState.currentWord.isNotEmpty()) {
+    // Automatically speak the word when it changes and TTS is ready
+    // Wait for TTS initialization to avoid race condition on app start
+    LaunchedEffect(gameState.currentWord, isTTSReady) {
+        if (gameState.currentWord.isNotEmpty() && isTTSReady) {
             viewModel.speakCurrentWord()
         }
     }

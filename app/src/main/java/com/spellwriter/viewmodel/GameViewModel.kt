@@ -113,6 +113,9 @@ class GameViewModel(
     // Audio manager for TTS and sound effects
     private val audioManager = AudioManager(context, _currentLanguage.value)
 
+    // Expose TTS ready state to UI for proper initialization timing
+    val isTTSReady: StateFlow<Boolean> = audioManager.isTTSReady
+
     init {
         viewModelScope.launch {
             loadWordsForStar()
@@ -163,6 +166,8 @@ class GameViewModel(
                 _isSpeaking.value = false
             }
         )
+
+        Log.d(TAG, "Word '${_gameState.value.currentWord}' spoken.")
     }
 
     /**

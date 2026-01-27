@@ -21,8 +21,11 @@ class AudioManager(
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking
 
+    // TTS ready state to prevent race conditions
+    private val _isTTSReady = MutableStateFlow(false)
+    val isTTSReady: StateFlow<Boolean> = _isTTSReady
+
     private var tts: TextToSpeech? = null
-    private var isTTSReady = false
     private val soundManager = SoundManager(context)
 
     init {
@@ -38,11 +41,12 @@ class AudioManager(
             if (status == TextToSpeech.SUCCESS) {
                 val locale = getTTSLocale()
                 val result = tts?.setLanguage(locale)
-                isTTSReady = result != TextToSpeech.LANG_MISSING_DATA &&
+                val isReady = result != TextToSpeech.LANG_MISSING_DATA &&
                         result != TextToSpeech.LANG_NOT_SUPPORTED
 
-                if (isTTSReady) {
+                if (isReady) {
                     tts?.setSpeechRate(0.9f)
+                    _isTTSReady.value = true
                     Log.d(TAG, "TTS initialized successfully with locale: $locale")
                 } else {
                     Log.w(TAG, "TTS language not supported: $locale - continuing without audio")
@@ -84,7 +88,7 @@ class AudioManager(
             return
         }
 
-        if (isTTSReady && tts != null) {
+        if (_isTTSReady.value && tts != null) {
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
                     _isSpeaking.value = true
