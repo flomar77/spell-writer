@@ -232,7 +232,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
 
 ## Phase 7: Integration Testing
 
-- [ ] 94. [TEST] Write end-to-end integration tests
+- [x] 94. [TEST] Write end-to-end integration tests
   - Test complete flow: Launch → Play → Loading → Game → Word spoken
   - Test replay flow: Game → Home → Play → Immediate navigation
   - Test language change: EN → DE → Play → German TTS
@@ -241,13 +241,13 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
   - Test double-click prevention during loading
   - Test language change during loading (cancel + reset)
 
-- [ ] 95. [CHECK] Run full test suite
+- [x] 95. [CHECK] Run full test suite
   - Unit tests: `./gradlew test`
   - Instrumented tests: `./gradlew connectedAndroidTest`
   - Verify all tests pass
   - Check code coverage for new code paths
 
-- [ ] 96. [COMMIT] Commit integration tests
+- [x] 96. [COMMIT] Commit integration tests
   - Review test coverage
   - Commit: `test: add end-to-end integration tests for TTS initialization flow`
 
@@ -396,7 +396,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
 - [x] Phase 4: GameScreen
 - [x] Phase 5: HomeScreen
 - [x] Phase 6: MainActivity
-- [ ] Phase 7: Integration Testing
+- [x] Phase 7: Integration Testing
 - [ ] Phase 8: Manual Testing
 - [ ] Phase 9: Polish
 - [ ] Phase 10: Final Review
