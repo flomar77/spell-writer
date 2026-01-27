@@ -217,14 +217,14 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
   - Add DisposableEffect(Unit) in SpellWriterApp
   - In onDispose: audioManager?.release()
 
-- [ ] 92. [CHECK] Run MainActivity integration tests
+- [x] 92. [CHECK] Run MainActivity integration tests
   - Verify all TTS initialization tests pass
   - Test full flow: Home → Play → Loading → Game
   - Test replay flow: Game → Home → Play (immediate)
   - Test language change flow
   - Test error handling with TTS disabled
 
-- [ ] 93. [COMMIT] Commit MainActivity changes
+- [x] 93. [COMMIT] Commit MainActivity changes
   - Review all changes
   - Commit: `feat: implement TTS initialization at MainActivity level with loading state management`
 
@@ -395,7 +395,7 @@ Move TTS initialization from GameViewModel to HomeScreen with loading indicator,
 - [x] Phase 3: GameViewModel
 - [x] Phase 4: GameScreen
 - [x] Phase 5: HomeScreen
-- [ ] Phase 6: MainActivity
+- [x] Phase 6: MainActivity
 - [ ] Phase 7: Integration Testing
 - [ ] Phase 8: Manual Testing
 - [ ] Phase 9: Polish
