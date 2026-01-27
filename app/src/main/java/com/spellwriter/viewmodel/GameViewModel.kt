@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
  * Story 2.3: Progress persistence and word performance tracking
  * Story 3.1: Session control and exit flow with session persistence
  * Hint Feature: Grey hint letters after 5 consecutive failures to help young learners
+ * AudioManager Injection: Accepts optional AudioManager for TTS initialization at MainActivity level
  *
  * **Hint Letter Feature:**
  * - Tracks consecutive failures at current position (consecutiveFailuresAtCurrentPosition)
@@ -48,6 +49,7 @@ import kotlinx.coroutines.launch
  * @param progressRepository Repository for persisting progress (Story 2.3)
  * @param sessionRepository Repository for persisting session state (Story 3.1)
  * @param initialProgress Initial progress state (Story 2.3)
+ * @param audioManager Optional AudioManager instance (null if game runs without audio)
  */
 class GameViewModel(
     private val context: Context,
@@ -55,7 +57,8 @@ class GameViewModel(
     private val isReplaySession: Boolean = false,
     private val progressRepository: ProgressRepository? = null,
     private val sessionRepository: SessionRepository? = null,
-    private val initialProgress: Progress = Progress()
+    private val initialProgress: Progress = Progress(),
+    private val audioManager: AudioManager? = null
 ) : ViewModel() {
 
     // Game state exposed to UI
@@ -110,11 +113,10 @@ class GameViewModel(
      */
     private var consecutiveFailuresAtCurrentPosition = 0
 
-    // Audio manager for TTS and sound effects
-    private val audioManager = AudioManager(context, _currentLanguage.value)
-
     // Expose TTS ready state to UI for proper initialization timing
-    val isTTSReady: StateFlow<Boolean> = audioManager.isTTSReady
+    // Returns false if audioManager is null (game runs without audio)
+    val isTTSReady: StateFlow<Boolean> = audioManager?.isTTSReady
+        ?: MutableStateFlow(false).asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -154,7 +156,7 @@ class GameViewModel(
     fun speakCurrentWord() {
         val word = _gameState.value.currentWord
 
-        audioManager.speakWord(
+        audioManager?.speakWord(
             word = word,
             onStart = {
                 _isSpeaking.value = true
@@ -216,7 +218,7 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.HAPPY)
 
-        audioManager.playSuccess()
+        audioManager?.playSuccess()
 
         if (_gameState.value.typedLetters == _gameState.value.currentWord) {
             onWordCompleted()
@@ -240,7 +242,7 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.UNHAPPY)
 
-        audioManager.playError()
+        audioManager?.playError()
     }
 
     /**
@@ -558,7 +560,7 @@ class GameViewModel(
      */
     override fun onCleared() {
         Log.d(TAG, "Cleaning up GameViewModel resources")
-        audioManager.release()
+        audioManager?.release()
         timeoutManager.release()
         super.onCleared()
     }

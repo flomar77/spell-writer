@@ -323,8 +323,9 @@ class GameViewModelTest {
      * Helper function to create GameViewModel for testing.
      * Uses test context and mocked dependencies.
      * Story 3.1: Updated to include SessionRepository
+     * AudioManager Injection: Updated to accept optional audioManager parameter
      */
-    private fun createTestViewModel(): GameViewModel {
+    private fun createTestViewModel(audioManager: com.spellwriter.audio.AudioManager? = null): GameViewModel {
         val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
         return GameViewModel(
             context = context,
@@ -332,7 +333,8 @@ class GameViewModelTest {
             isReplaySession = false,
             progressRepository = null,
             sessionRepository = null,  // Story 3.1: No session persistence in unit tests
-            initialProgress = com.spellwriter.data.models.Progress()
+            initialProgress = com.spellwriter.data.models.Progress(),
+            audioManager = audioManager
         )
     }
 
@@ -406,6 +408,109 @@ class GameViewModelTest {
             state.typedLetters == state.currentWord
         )
     }
+
+    // AudioManager Injection Tests
+
+    @Test
+    fun gameViewModel_withNullAudioManager_createsSuccessfully() {
+        // Game should work without audio (null AudioManager)
+        val viewModel = createTestViewModel(audioManager = null)
+
+        assertNotNull("ViewModel should be created with null audioManager", viewModel)
+        assertNotNull("GameState should be initialized", viewModel.gameState.value)
+    }
+
+    @Test
+    fun gameViewModel_withNullAudioManager_gameStateIsValid() {
+        // Verify game state is properly initialized even without AudioManager
+        val viewModel = createTestViewModel(audioManager = null)
+        val gameState = viewModel.gameState.value
+
+        // Game should still load words and be playable
+        assertNotNull("Current word should be set", gameState.currentWord)
+        assertEquals("Typed letters should be empty initially", "", gameState.typedLetters)
+        assertEquals("Words completed should start at 0", 0, gameState.wordsCompleted)
+    }
+
+    @Test
+    fun isTTSReady_withNullAudioManager_returnsFalse() {
+        // When audioManager is null, isTTSReady should return false
+        val viewModel = createTestViewModel(audioManager = null)
+
+        assertFalse(
+            "isTTSReady should be false with null audioManager",
+            viewModel.isTTSReady.value
+        )
+    }
+
+    @Test
+    fun speakCurrentWord_withNullAudioManager_doesNotCrash() {
+        // speakCurrentWord should handle null audioManager gracefully (no-op)
+        val viewModel = createTestViewModel(audioManager = null)
+
+        try {
+            viewModel.speakCurrentWord()
+            // If we reach here, no exception was thrown
+            assertTrue("speakCurrentWord should not crash with null audioManager", true)
+        } catch (e: Exception) {
+            fail("speakCurrentWord should not throw exception with null audioManager: ${e.message}")
+        }
+    }
+
+    @Test
+    fun onLetterTyped_withNullAudioManager_doesNotCrash() {
+        // Letter typing should work without audio
+        val viewModel = createTestViewModel(audioManager = null)
+
+        try {
+            viewModel.onLetterTyped('A')
+            // If we reach here, no exception was thrown
+            assertTrue("onLetterTyped should not crash with null audioManager", true)
+        } catch (e: Exception) {
+            fail("onLetterTyped should not throw exception with null audioManager: ${e.message}")
+        }
+    }
+
+    @Test
+    fun gameViewModel_audioManagerInjection_defaultsToNull() {
+        // Verify that audioManager defaults to null when not provided
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val viewModel = GameViewModel(
+            context = context,
+            starNumber = 1
+            // audioManager not provided - should default to null
+        )
+
+        assertFalse(
+            "isTTSReady should be false when audioManager not provided",
+            viewModel.isTTSReady.value
+        )
+    }
+
+    @Test
+    fun gameViewModel_withNullAudioManager_sessionFlowWorks() {
+        // Full game session should work without audio
+        val viewModel = createTestViewModel(audioManager = null)
+
+        // Verify basic game operations work
+        assertNotNull("Game state should exist", viewModel.gameState.value)
+        assertFalse("Session should not be complete initially", viewModel.gameState.value.sessionComplete)
+
+        // Exit flow should work
+        viewModel.requestExit()
+        assertTrue("Exit dialog should show", viewModel.showExitDialog.value)
+
+        viewModel.cancelExit()
+        assertFalse("Exit dialog should hide", viewModel.showExitDialog.value)
+    }
+
+    // Note: Tests with valid (non-null) AudioManager require actual AudioManager instantiation
+    // which depends on TTS availability and Android context setup.
+    // These are covered in instrumentation tests (androidTest) where we can:
+    // - Create actual AudioManager instances
+    // - Mock TTS initialization
+    // - Test audio playback integration
+    // - Verify isTTSReady state flow updates
 
     // Note: GameViewModel tests requiring Context, TTS, and SoundManager
     // are in instrumentation tests (androidTest)
