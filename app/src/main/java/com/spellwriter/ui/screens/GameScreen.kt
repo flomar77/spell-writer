@@ -106,6 +106,13 @@ fun GameScreen(
         }
     }
 
+    // Automatically speak the word when it changes (on initial load and each new word)
+    LaunchedEffect(gameState.currentWord) {
+        if (gameState.currentWord.isNotEmpty()) {
+            viewModel.speakCurrentWord()
+        }
+    }
+
     // Story 2.4: Wrap content in Box for celebration overlay (AC6, AC7)
     Box(modifier = modifier.fillMaxSize()) {
         // Base game UI
