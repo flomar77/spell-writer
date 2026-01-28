@@ -1,6 +1,9 @@
 package com.spellwriter.audio
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.tts.ModelConfig
@@ -39,6 +42,7 @@ class AudioManager(
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var tts: OfflineTts? = null
+    private var track: AudioTrack? = null
     private val soundManager = SoundManager(context)
 
     init {
@@ -113,6 +117,54 @@ class AudioManager(
     }
 
     /**
+     * Initialize AudioTrack for PCM audio playback.
+     * Creates AudioTrack with sample rate from TTS, PCM_FLOAT encoding, mono channel.
+     */
+    private fun initializeAudioTrack() {
+        try {
+            val sampleRate = tts?.sampleRate() ?: 22050
+            Log.d(TAG, "Initializing AudioTrack with sample rate: $sampleRate Hz")
+
+            // Calculate buffer size for streaming audio
+            val bufferLength = AudioTrack.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_FLOAT
+            )
+
+            // Build audio attributes for speech/media playback
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+
+            // Build audio format for PCM float mono
+            val audioFormat = AudioFormat.Builder()
+                .setSampleRate(sampleRate)
+                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                .build()
+
+            // Create AudioTrack in streaming mode
+            track = AudioTrack(
+                audioAttributes,
+                audioFormat,
+                bufferLength,
+                AudioTrack.MODE_STREAM,
+                android.media.AudioManager.AUDIO_SESSION_ID_GENERATE
+            )
+
+            // Start AudioTrack in play state (ready to receive samples)
+            track?.play()
+            Log.d(TAG, "AudioTrack initialized and started")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize AudioTrack: ${e.message}", e)
+            track = null
+        }
+    }
+
+    /**
      * Initialize sherpa-onnx TTS with appropriate model.
      * Sets up OfflineTts asynchronously with model loading.
      */
@@ -157,6 +209,9 @@ class AudioManager(
                 // Verify TTS was created successfully
                 val sampleRate = tts?.sampleRate() ?: 0
                 if (sampleRate > 0) {
+                    // Initialize AudioTrack with TTS sample rate
+                    initializeAudioTrack()
+
                     _isTTSReady.value = true
                     Log.d(TAG, "TTS initialized successfully - sample rate: $sampleRate Hz")
                 } else {
@@ -222,10 +277,12 @@ class AudioManager(
 
     /**
      * Clean up audio resources.
-     * TODO: Phase 8 - Add AudioTrack cleanup
      */
     fun release() {
         coroutineScope.cancel()
+        track?.stop()
+        track?.release()
+        track = null
         tts?.free()
         tts = null
         soundManager.release()

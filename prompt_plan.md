@@ -151,7 +151,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test sample rate obtained from tts.sampleRate()
   - Mock AudioTrack construction
 
-- [ ] 20. [IMPL] Implement AudioTrack initialization
+- [X] 20. [IMPL] Implement AudioTrack initialization
   - Add imports: android.media.AudioTrack, AudioFormat, AudioAttributes
   - Add `private var track: AudioTrack?` field
   - Implement initializeAudioTrack() function:
