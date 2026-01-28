@@ -107,7 +107,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 ## Phase 5: AudioManager Refactoring - Part 2 (TTS Initialization)
 
 ### Step 5: Replace TTS Engine
-- [ ] 15. [TEST] Write tests for sherpa-onnx TTS initialization
+- [X] 15. [TEST] Write tests for sherpa-onnx TTS initialization
   - Test initializeTTS() creates OfflineTts successfully
   - Test isTTSReady becomes true after successful init
   - Test isTTSReady remains false on init failure
