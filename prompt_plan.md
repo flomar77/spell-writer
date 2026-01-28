@@ -163,12 +163,12 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
     - Call track.play()
   - Call initializeAudioTrack() after OfflineTts creation in initializeTTS()
 
-- [ ] 21. [CHECK] Run AudioTrack tests
+- [X] 21. [CHECK] Run AudioTrack tests
   - Verify all tests pass
   - Test on real device: Verify AudioTrack creates without crashes
   - Check logs for sample rate value
 
-- [ ] 22. [COMMIT] Commit AudioTrack setup
+- [X] 22. [COMMIT] Commit AudioTrack setup
   - Review: AudioTrack initialization added
   - Commit: `feat: add AudioTrack setup for PCM audio playback from sherpa-onnx`
 
