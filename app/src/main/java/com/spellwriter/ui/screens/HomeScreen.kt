@@ -1,11 +1,16 @@
 package com.spellwriter.ui.screens
 
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -21,6 +26,19 @@ import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.WorldProgressRow
 import com.spellwriter.viewmodel.GameViewModel
 import com.spellwriter.viewmodel.HomeViewModel
+
+/**
+ * Extension function to find the ComponentActivity from a Context.
+ * Unwraps ContextWrapper layers to find the Activity.
+ */
+private fun android.content.Context.findActivity(): ComponentActivity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is ComponentActivity) return context
+        context = context.baseContext
+    }
+    return null
+}
 
 /**
  * Home Screen for Stories 1.1 & 1.2 - Welcoming interface with progress tracking.
@@ -45,17 +63,16 @@ fun HomeScreen(
     isTTSInitializing: Boolean = false,
     ttsError: String? = null
 ) {
-//    val context = LocalContext.current
-//    val viewModel = HomeViewModel(
-//        context = context
-//
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
         LanguageSwitcher(
             onLanguageChanged = onLanguageChanged,
             enabled = !isTTSInitializing
@@ -137,6 +154,25 @@ fun HomeScreen(
                 text = stringResource(R.string.home_play),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
+            )
+        }
+        }
+
+        // Exit button in top right corner
+        val context = LocalContext.current
+        IconButton(
+            onClick = {
+                context.findActivity()?.finish()
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(48.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.exit_button_description),
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }
