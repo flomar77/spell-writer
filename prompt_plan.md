@@ -30,12 +30,13 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 
 ### Step 2: Copy and Adapt Tts.kt
 - [X] 4. [IMPL] Copy sherpa-onnx Kotlin API wrapper
-  - Create package: `app/src/main/java/com/spellwriter/tts/sherpa/`
+  - Create package: `app/src/main/java/com/k2fsa/sherpa/onnx/` (MUST match native lib!)
   - Copy `/Users/florentmartin/Sites/sherpa-onnx/sherpa-onnx/kotlin-api/Tts.kt`
-  - Change package from `com.k2fsa.sherpa.onnx` to `com.spellwriter.tts.sherpa`
+  - Keep package as `com.k2fsa.sherpa.onnx` (JNI requirement - precompiled native lib)
   - Add companion object with `System.loadLibrary("sherpa-onnx-jni")` to OfflineTts class
   - Keep all data classes: OfflineTtsVitsModelConfig, OfflineTtsConfig, GeneratedAudio, OfflineTts
   - Keep all native method declarations unchanged
+  - NOTE: Package name CANNOT be changed without recompiling native library
 
 - [X] 5. [CHECK] Build verification for Tts.kt wrapper
   - Run: `./gradlew compileDebugKotlin`
