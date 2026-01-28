@@ -1,4 +1,4 @@
-package com.spellwriter.tts.sherpa
+package com.k2fsa.sherpa.onnx
 
 import android.content.res.AssetManager
 

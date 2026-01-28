@@ -6,10 +6,10 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
+import com.k2fsa.sherpa.onnx.OfflineTts
+import com.k2fsa.sherpa.onnx.getOfflineTtsConfig
 import com.spellwriter.tts.ModelConfig
 import com.spellwriter.tts.TtsModelConfig
-import com.spellwriter.tts.sherpa.OfflineTts
-import com.spellwriter.tts.sherpa.getOfflineTtsConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
