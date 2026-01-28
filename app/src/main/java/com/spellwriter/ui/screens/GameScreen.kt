@@ -114,9 +114,16 @@ fun GameScreen(
 
     // Automatically speak the word when it changes and TTS is ready
     // Wait for TTS initialization to avoid race condition on app start
+    // Skip if user just clicked play/replay button to prevent duplicate playback
     LaunchedEffect(gameState.currentWord, isTTSReady) {
         if (gameState.currentWord.isNotEmpty() && isTTSReady) {
-            viewModel.speakCurrentWord()
+            // Brief delay to ensure button click flag propagates first
+            delay(100L)
+            if (!viewModel.shouldSkipAutoPlay()) {
+                viewModel.speakCurrentWord()
+            } else {
+                android.util.Log.d("GameScreen", "Skipping auto-play - user initiated playback recently")
+            }
         }
     }
 
