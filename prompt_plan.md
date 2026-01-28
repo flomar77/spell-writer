@@ -202,14 +202,14 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Set _isSpeaking.value = false, call onDone()
   - Wrap in try-catch, call onError() on exception
 
-- [ ] 25. [CHECK] Run speech synthesis tests
+- [X] 25. [CHECK] Run speech synthesis tests
   - Verify all tests pass
   - Test on real device: Click Play button
   - Verify word pronunciation works
   - Verify isSpeaking animation syncs
   - Check audio quality
 
-- [ ] 26. [COMMIT] Commit speech synthesis refactoring
+- [X] 26. [COMMIT] Commit speech synthesis refactoring
   - Review: speakWord() now uses sherpa-onnx generation
   - Commit: `feat: implement streaming audio synthesis with sherpa-onnx generateWithCallback`
 
