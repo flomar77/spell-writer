@@ -271,34 +271,42 @@ class AudioManager(
             try {
                 Log.d(TAG, "Speaking word: $word")
 
-                // Prepare AudioTrack for new audio
-                track?.pause()
-                track?.flush()
-                track?.play()
-
                 // Update state and notify start
                 _isSpeaking.value = true
                 onStart()
 
-                // Generate audio with streaming callback
-                tts?.generateWithCallback(
+                // Generate audio (returns all samples at once)
+                Log.d(TAG, "Generating audio...")
+                val audio = tts?.generate(
                     text = word,
                     sid = 0,      // Single speaker model
                     speed = 0.9f  // Slightly slower for clarity
-                ) { samples ->
-                    // Write audio samples to AudioTrack
-                    track?.write(
-                        samples,
-                        0,
-                        samples.size,
-                        AudioTrack.WRITE_BLOCKING
-                    )
-                    // Return 1 to continue generation, 0 to stop
-                    1
-                }
+                )
 
-                // Small delay to ensure all samples are played
-                delay(100)
+                if (audio != null) {
+                    Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
+
+                    // Prepare AudioTrack
+                    track?.pause()
+                    track?.flush()
+                    track?.play()
+
+                    // Write all audio samples to AudioTrack
+                    val bytesWritten = track?.write(
+                        audio.samples,
+                        0,
+                        audio.samples.size,
+                        AudioTrack.WRITE_BLOCKING
+                    ) ?: 0
+
+                    Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
+
+                    // Wait for playback to complete
+                    val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
+                    delay(durationMs + 100)
+                } else {
+                    Log.w(TAG, "Audio generation returned null")
+                }
 
                 // Update state and notify completion
                 _isSpeaking.value = false
