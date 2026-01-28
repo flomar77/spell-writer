@@ -57,7 +57,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test ModelConfig data class contains expected fields
   - Test model directories match assets structure
 
-- [ ] 8. [IMPL] Implement TtsModelConfig
+- [X] 8. [IMPL] Implement TtsModelConfig
   - Create: `app/src/main/java/com/spellwriter/tts/TtsModelConfig.kt`
   - Add getConfigForLanguage() function with switch on AppLanguage
   - German config: modelDir="vits-piper-de_DE-thorsten-low-int8", modelName="de_DE-thorsten-low.onnx"
@@ -65,7 +65,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Add espeakDataPath for espeak-ng-data location
   - Create ModelConfig data class with all paths
 
-- [ ] 9. [CHECK] Run TtsModelConfig tests
+- [X] 9. [CHECK] Run TtsModelConfig tests
   - Verify all tests pass
   - Verify config matches asset directory structure
 
