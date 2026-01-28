@@ -5,8 +5,13 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.Locale
 
 /**
@@ -30,6 +35,73 @@ class AudioManager(
 
     init {
         initializeTTS()
+    }
+
+    /**
+     * Copy espeak-ng-data from assets to external storage.
+     * Required for sherpa-onnx TTS which needs file paths (not AssetManager).
+     * Skips copying if target directory already exists (optimization).
+     *
+     * @param espeakDataPath Path to espeak-ng-data in assets (e.g., "vits-piper-de_DE-thorsten-low-int8/espeak-ng-data")
+     */
+    private suspend fun copyEspeakDataToExternal(espeakDataPath: String) = withContext(Dispatchers.IO) {
+        val targetDir = File(context.getExternalFilesDir(null), "espeak-ng-data")
+
+        // Optimization: skip if already copied
+        if (targetDir.exists()) {
+            Log.d(TAG, "espeak-ng-data already exists at: ${targetDir.absolutePath}")
+            return@withContext
+        }
+
+        try {
+            Log.d(TAG, "Copying espeak-ng-data from assets/$espeakDataPath to ${targetDir.absolutePath}")
+            targetDir.mkdirs()
+            copyAssetsRecursive(espeakDataPath, targetDir)
+            Log.d(TAG, "Successfully copied espeak-ng-data")
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to copy espeak-ng-data: ${e.message}", e)
+            throw e
+        }
+    }
+
+    /**
+     * Recursively copy directory contents from assets.
+     *
+     * @param assetPath Path in assets directory
+     * @param targetDir Target directory in external storage
+     */
+    private fun copyAssetsRecursive(assetPath: String, targetDir: File) {
+        val files = context.assets.list(assetPath) ?: emptyArray()
+
+        for (filename in files) {
+            val assetFilePath = "$assetPath/$filename"
+            val subFiles = context.assets.list(assetFilePath)
+
+            if (subFiles != null && subFiles.isNotEmpty()) {
+                // It's a directory, recurse
+                val subDir = File(targetDir, filename)
+                subDir.mkdirs()
+                copyAssetsRecursive(assetFilePath, subDir)
+            } else {
+                // It's a file, copy it
+                copyAssetFile(assetFilePath, File(targetDir, filename))
+            }
+        }
+    }
+
+    /**
+     * Copy a single file from assets to target location.
+     *
+     * @param assetFilePath Path to file in assets
+     * @param targetFile Target file location
+     */
+    private fun copyAssetFile(assetFilePath: String, targetFile: File) {
+        context.assets.open(assetFilePath).use { input ->
+            FileOutputStream(targetFile).use { output ->
+                input.copyTo(output)
+                Log.d(TAG, "Copied: $assetFilePath -> ${targetFile.name}")
+            }
+        }
     }
 
     /**

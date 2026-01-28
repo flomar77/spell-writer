@@ -85,7 +85,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test IOException handled gracefully
   - Mock Context.assets and File operations
 
-- [ ] 12. [IMPL] Implement asset copying utilities in AudioManager
+- [X] 12. [IMPL] Implement asset copying utilities in AudioManager
   - Add imports: java.io.File, kotlinx.coroutines.withContext, Dispatchers
   - Add copyEspeakDataToExternal() suspending function
   - Add copyAssetsRecursive(path: String) helper
@@ -93,7 +93,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Check if target exists before copying (optimization)
   - Log copy operations for debugging
 
-- [ ] 13. [CHECK] Run asset copying tests
+- [X] 13. [CHECK] Run asset copying tests
   - Verify all tests pass
   - Test on real device: Check external files directory after copy
   - Verify espeak-ng-data files present and readable
