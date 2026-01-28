@@ -129,12 +129,12 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
     - Set _isTTSReady.value = true on success
     - Handle exceptions and log errors
 
-- [ ] 17. [CHECK] Run TTS initialization tests
+- [X] 17. [CHECK] Run TTS initialization tests
   - Verify all new tests pass
   - Verify old TextToSpeech tests removed/updated
   - Test initialization timing (should be <2s)
 
-- [ ] 18. [COMMIT] Commit TTS initialization refactoring
+- [X] 18. [COMMIT] Commit TTS initialization refactoring
   - Review: OfflineTts replaces TextToSpeech
   - Commit: `refactor: replace Android TextToSpeech with sherpa-onnx OfflineTts`
 
