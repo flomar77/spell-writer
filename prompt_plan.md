@@ -51,7 +51,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 ## Phase 3: Model Configuration System
 
 ### Step 3: Create Model Config
-- [ ] 7. [TEST] Write tests for TtsModelConfig
+- [X] 7. [TEST] Write tests for TtsModelConfig
   - Test getConfigForLanguage(GERMAN) returns correct model paths
   - Test getConfigForLanguage(ENGLISH) returns correct model paths
   - Test ModelConfig data class contains expected fields
