@@ -42,7 +42,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Verify no compilation errors
   - Verify native library loading works (check logs)
 
-- [ ] 6. [COMMIT] Commit Tts.kt wrapper
+- [X] 6. [COMMIT] Commit Tts.kt wrapper
   - Review: New package com.spellwriter.tts.sherpa created
   - Commit: `feat: add sherpa-onnx Kotlin JNI wrapper for TTS integration`
 
