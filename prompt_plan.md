@@ -116,7 +116,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test exception handling (missing models, missing libs)
   - Mock OfflineTts constructor and AssetManager
 
-- [ ] 16. [IMPL] Replace TextToSpeech with OfflineTts in AudioManager
+- [X] 16. [IMPL] Replace TextToSpeech with OfflineTts in AudioManager
   - Remove imports: android.speech.tts.TextToSpeech, UtteranceProgressListener
   - Add imports: com.spellwriter.tts.sherpa.OfflineTts, com.spellwriter.tts.TtsModelConfig
   - Replace `private var tts: TextToSpeech?` with `private var tts: OfflineTts?`

@@ -1,18 +1,23 @@
 package com.spellwriter.audio
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.tts.ModelConfig
+import com.spellwriter.tts.TtsModelConfig
+import com.spellwriter.tts.sherpa.OfflineTts
+import com.spellwriter.tts.sherpa.getOfflineTtsConfig
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.Locale
 
 /**
  * Manages audio functionality including TTS and sound effects.
@@ -30,7 +35,10 @@ class AudioManager(
     private val _isTTSReady = MutableStateFlow(false)
     val isTTSReady: StateFlow<Boolean> = _isTTSReady
 
-    private var tts: TextToSpeech? = null
+    // Coroutine scope for async TTS operations
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private var tts: OfflineTts? = null
     private val soundManager = SoundManager(context)
 
     init {
@@ -105,44 +113,68 @@ class AudioManager(
     }
 
     /**
-     * Initialize TextToSpeech with appropriate locale.
-     * Sets up TTS asynchronously with OnInitListener.
+     * Initialize sherpa-onnx TTS with appropriate model.
+     * Sets up OfflineTts asynchronously with model loading.
      */
     private fun initializeTTS() {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val locale = getTTSLocale()
-                val result = tts?.setLanguage(locale)
-                val isReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                        result != TextToSpeech.LANG_NOT_SUPPORTED
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Initializing sherpa-onnx TTS for language: $language")
 
-                if (isReady) {
-                    tts?.setSpeechRate(0.9f)
+                // Get model configuration for selected language
+                val modelConfig = TtsModelConfig.getConfigForLanguage(language)
+
+                // Copy espeak-ng-data to external storage (required for file paths)
+                copyEspeakDataToExternal(modelConfig.espeakDataPath)
+
+                // Get external espeak-ng-data path
+                val externalEspeakPath = File(
+                    context.getExternalFilesDir(null),
+                    "espeak-ng-data"
+                ).absolutePath
+
+                // Build OfflineTts configuration
+                val config = getOfflineTtsConfig(
+                    modelDir = modelConfig.modelDir,
+                    modelName = modelConfig.modelName,
+                    acousticModelName = "", // Not using Matcha
+                    vocoder = "", // Not using Matcha
+                    voices = "", // Not using Kokoro/Kitten
+                    lexicon = "", // Piper models don't use separate lexicon
+                    dataDir = externalEspeakPath,
+                    dictDir = "", // Unused
+                    ruleFsts = "",
+                    ruleFars = "",
+                    numThreads = 2 // Balance of speed and CPU usage
+                )
+
+                // Create OfflineTts instance with AssetManager
+                tts = OfflineTts(
+                    assetManager = context.assets,
+                    config = config
+                )
+
+                // Verify TTS was created successfully
+                val sampleRate = tts?.sampleRate() ?: 0
+                if (sampleRate > 0) {
                     _isTTSReady.value = true
-                    Log.d(TAG, "TTS initialized successfully with locale: $locale")
+                    Log.d(TAG, "TTS initialized successfully - sample rate: $sampleRate Hz")
                 } else {
-                    Log.w(TAG, "TTS language not supported: $locale - continuing without audio")
+                    Log.w(TAG, "TTS initialization failed - invalid sample rate")
+                    _isTTSReady.value = false
                 }
-            } else {
-                Log.w(TAG, "TTS initialization failed - continuing without audio")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize TTS: ${e.message}", e)
+                _isTTSReady.value = false
+                // Continue without audio - app should remain functional
             }
         }
     }
 
     /**
-     * Get appropriate TTS locale based on app language.
-     *
-     * @return Locale.GERMANY for German, Locale.US for English
-     */
-    private fun getTTSLocale(): Locale {
-        return when (language) {
-            AppLanguage.GERMAN -> Locale.GERMANY
-            AppLanguage.ENGLISH -> Locale.US
-        }
-    }
-
-    /**
      * Speak the given word using TTS.
+     * TODO: Phase 7 - Replace with sherpa-onnx generateWithCallback() and AudioTrack
      *
      * @param word The word to speak
      * @param onStart Callback when TTS starts speaking
@@ -161,28 +193,14 @@ class AudioManager(
         }
 
         if (_isTTSReady.value && tts != null) {
-            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {
-                    _isSpeaking.value = true
-                    onStart()
-                    Log.d(TAG, "TTS started speaking: $utteranceId")
-                }
-
-                override fun onDone(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    onDone()
-                    Log.d(TAG, "TTS finished speaking: $utteranceId")
-                }
-
-                override fun onError(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    onError()
-                    Log.w(TAG, "TTS error for utterance: $utteranceId")
-                }
-            })
-
-            tts?.speak(word, TextToSpeech.QUEUE_FLUSH, null, "word_${System.currentTimeMillis()}")
-            Log.d(TAG, "Speaking word: $word")
+            // TODO: Phase 7 - Implement streaming audio with generateWithCallback
+            // For now, just simulate basic behavior
+            Log.d(TAG, "TODO: Implement sherpa-onnx speakWord - word: $word")
+            _isSpeaking.value = true
+            onStart()
+            // Temporary: immediately call onDone
+            _isSpeaking.value = false
+            onDone()
         } else {
             Log.w(TAG, "TTS not ready - continuing without audio")
         }
@@ -204,10 +222,12 @@ class AudioManager(
 
     /**
      * Clean up audio resources.
+     * TODO: Phase 8 - Add AudioTrack cleanup
      */
     fun release() {
-        tts?.stop()
-        tts?.shutdown()
+        coroutineScope.cancel()
+        tts?.free()
+        tts = null
         soundManager.release()
         Log.d(TAG, "Audio resources released")
     }
