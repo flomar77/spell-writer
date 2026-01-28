@@ -172,21 +172,28 @@ class AudioManager(
     private fun initializeTTS() {
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Initializing sherpa-onnx TTS for language: $language")
+                Log.d(TAG, "=== Starting sherpa-onnx TTS initialization ===")
+                Log.d(TAG, "Language: $language")
+                Log.d(TAG, "External files dir: ${context.getExternalFilesDir(null)?.absolutePath}")
 
                 // Get model configuration for selected language
                 val modelConfig = TtsModelConfig.getConfigForLanguage(language)
+                Log.d(TAG, "Model config: modelDir=${modelConfig.modelDir}, modelName=${modelConfig.modelName}")
 
                 // Copy espeak-ng-data to external storage (required for file paths)
+                Log.d(TAG, "Copying espeak-ng-data from: ${modelConfig.espeakDataPath}")
                 copyEspeakDataToExternal(modelConfig.espeakDataPath)
+                Log.d(TAG, "espeak-ng-data copy completed")
 
                 // Get external espeak-ng-data path
                 val externalEspeakPath = File(
                     context.getExternalFilesDir(null),
                     "espeak-ng-data"
                 ).absolutePath
+                Log.d(TAG, "External espeak path: $externalEspeakPath")
 
                 // Build OfflineTts configuration
+                Log.d(TAG, "Building OfflineTts configuration...")
                 val config = getOfflineTtsConfig(
                     modelDir = modelConfig.modelDir,
                     modelName = modelConfig.modelName,
@@ -200,15 +207,19 @@ class AudioManager(
                     ruleFars = "",
                     numThreads = 2 // Balance of speed and CPU usage
                 )
+                Log.d(TAG, "Config built successfully")
 
                 // Create OfflineTts instance with AssetManager
+                Log.d(TAG, "Creating OfflineTts instance...")
                 tts = OfflineTts(
                     assetManager = context.assets,
                     config = config
                 )
+                Log.d(TAG, "OfflineTts instance created")
 
                 // Verify TTS was created successfully
                 val sampleRate = tts?.sampleRate() ?: 0
+                Log.d(TAG, "Got sample rate: $sampleRate Hz")
                 if (sampleRate > 0) {
                     // Initialize AudioTrack with TTS sample rate
                     initializeAudioTrack()
@@ -221,7 +232,10 @@ class AudioManager(
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize TTS: ${e.message}", e)
+                Log.e(TAG, "=== TTS Initialization FAILED ===")
+                Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
+                Log.e(TAG, "Error message: ${e.message}")
+                Log.e(TAG, "Stack trace:", e)
                 _isTTSReady.value = false
                 // Continue without audio - app should remain functional
             }
