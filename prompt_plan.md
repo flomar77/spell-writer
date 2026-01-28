@@ -188,7 +188,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test null TTS handling
   - Mock OfflineTts.generateWithCallback()
 
-- [ ] 24. [IMPL] Refactor speakWord() to use sherpa-onnx
+- [X] 24. [IMPL] Refactor speakWord() to use sherpa-onnx
   - Replace UtteranceProgressListener logic
   - Add Dispatchers.IO coroutine launch
   - Prepare AudioTrack: pause(), flush(), play()

@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -228,8 +229,8 @@ class AudioManager(
     }
 
     /**
-     * Speak the given word using TTS.
-     * TODO: Phase 7 - Replace with sherpa-onnx generateWithCallback() and AudioTrack
+     * Speak the given word using sherpa-onnx TTS with streaming audio.
+     * Uses generateWithCallback() for real-time audio generation and AudioTrack for playback.
      *
      * @param word The word to speak
      * @param onStart Callback when TTS starts speaking
@@ -247,17 +248,54 @@ class AudioManager(
             return
         }
 
-        if (_isTTSReady.value && tts != null) {
-            // TODO: Phase 7 - Implement streaming audio with generateWithCallback
-            // For now, just simulate basic behavior
-            Log.d(TAG, "TODO: Implement sherpa-onnx speakWord - word: $word")
-            _isSpeaking.value = true
-            onStart()
-            // Temporary: immediately call onDone
-            _isSpeaking.value = false
-            onDone()
-        } else {
-            Log.w(TAG, "TTS not ready - continuing without audio")
+        if (!_isTTSReady.value || tts == null || track == null) {
+            Log.w(TAG, "TTS or AudioTrack not ready - continuing without audio")
+            return
+        }
+
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Speaking word: $word")
+
+                // Prepare AudioTrack for new audio
+                track?.pause()
+                track?.flush()
+                track?.play()
+
+                // Update state and notify start
+                _isSpeaking.value = true
+                onStart()
+
+                // Generate audio with streaming callback
+                tts?.generateWithCallback(
+                    text = word,
+                    sid = 0,      // Single speaker model
+                    speed = 0.9f  // Slightly slower for clarity
+                ) { samples ->
+                    // Write audio samples to AudioTrack
+                    track?.write(
+                        samples,
+                        0,
+                        samples.size,
+                        AudioTrack.WRITE_BLOCKING
+                    )
+                    // Return 1 to continue generation, 0 to stop
+                    1
+                }
+
+                // Small delay to ensure all samples are played
+                delay(100)
+
+                // Update state and notify completion
+                _isSpeaking.value = false
+                onDone()
+                Log.d(TAG, "Finished speaking: $word")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error speaking word: ${e.message}", e)
+                _isSpeaking.value = false
+                onError()
+            }
         }
     }
 
