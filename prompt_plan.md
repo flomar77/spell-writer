@@ -78,7 +78,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 ## Phase 4: AudioManager Refactoring - Part 1 (Asset Copying)
 
 ### Step 4: Asset Copying Utilities
-- [ ] 11. [TEST] Write tests for espeak-ng-data asset copying
+- [X] 11. [TEST] Write tests for espeak-ng-data asset copying
   - Test copyEspeakDataToExternal() creates external directory
   - Test copyAssetsRecursive() handles files and directories correctly
   - Test copy skipped if target directory already exists
