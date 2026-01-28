@@ -1,412 +1,514 @@
-# Feature 2: TTS Initialization to HomeScreen
+# Sherpa-ONNX TTS Integration - Prompt Plan
 
 ## Overview
-Move TTS initialization from GameViewModel to HomeScreen with loading indicator, error handling, and AudioManager lifecycle management at MainActivity level.
+Replace Android system TTS with sherpa-onnx offline TTS using Piper models for better voice quality and offline capability.
 
-## Phase 1: String Resources Setup
+---
 
-- [x] 67. [IMPL] Add TTS loading and error string resources
-  - Add `home_tts_loading` and `home_tts_error` to values/strings.xml
-  - Add German translations to values-de/strings.xml
-  - Verify strings compile and are accessible
+## Phase 1: Prerequisites & Setup
 
-- [x] 68. [CHECK] Build verification
-  - Run `./gradlew compileDebugKotlin`
+### Step 1: Download Native Libraries
+- [X] 1. [SETUP] Download and extract sherpa-onnx native libraries
+  - Download sherpa-onnx-v1.12.23-android.tar.bz2 from GitHub releases
+  - Extract .so files for arm64-v8a, armeabi-v7a, x86_64, x86
+  - Copy to app/src/main/jniLibs/{arch}/ directories
+  - Verify files exist: libsherpa-onnx-jni.so, libonnxruntime.so, libsherpa-onnx-core.so
+
+- [X] 2. [CHECK] Verify native library installation
+  - Run: `ls -lh app/src/main/jniLibs/arm64-v8a/*.so`
+  - Confirm all 3 .so files present in each architecture folder
+  - Build test: `./gradlew assembleDebug`
+  - Check APK contains libs: `unzip -l app/build/outputs/apk/debug/app-debug.apk | grep "\.so$"`
+
+- [X] 3. [COMMIT] Commit native libraries
+  - Review: Native libraries added to jniLibs/
+  - Commit: `chore: add sherpa-onnx native libraries for offline TTS`
+
+---
+
+## Phase 2: Kotlin API Wrapper
+
+### Step 2: Copy and Adapt Tts.kt
+- [ ] 4. [IMPL] Copy sherpa-onnx Kotlin API wrapper
+  - Create package: `app/src/main/java/com/spellwriter/tts/sherpa/`
+  - Copy `/Users/florentmartin/Sites/sherpa-onnx/sherpa-onnx/kotlin-api/Tts.kt`
+  - Change package from `com.k2fsa.sherpa.onnx` to `com.spellwriter.tts.sherpa`
+  - Add companion object with `System.loadLibrary("sherpa-onnx-jni")` to OfflineTts class
+  - Keep all data classes: OfflineTtsVitsModelConfig, OfflineTtsConfig, GeneratedAudio, OfflineTts
+  - Keep all native method declarations unchanged
+
+- [ ] 5. [CHECK] Build verification for Tts.kt wrapper
+  - Run: `./gradlew compileDebugKotlin`
   - Verify no compilation errors
+  - Verify native library loading works (check logs)
 
-- [x] 69. [COMMIT] Commit string resources
-  - Review all changes
-  - Commit: `feat: add TTS initialization string resources for loading and error states`
-
----
-
-## Phase 2: LanguageSwitcher Component Update
-
-- [x] 70. [TEST] Write tests for LanguageSwitcher enabled/disabled states
-  - Test button enabled by default
-  - Test buttons disabled when enabled=false parameter passed
-  - Test click events blocked when disabled
-  - Test visual state (color) changes when disabled
-
-- [x] 71. [IMPL] Add enabled parameter to LanguageSwitcher
-  - Add `enabled: Boolean = true` parameter to LanguageSwitcher composable
-  - Add `enabled: Boolean = true` parameter to LanguageButton composable
-  - Pass enabled to Button's enabled property in both language buttons
-  - Combine with existing isSelected logic
-
-- [x] 72. [CHECK] Run LanguageSwitcher tests
-  - Verify all new tests pass
-  - Verify existing functionality unchanged
-
-- [x] 73. [COMMIT] Commit LanguageSwitcher changes
-  - Review changes
-  - Commit: `feat: add enabled parameter to LanguageSwitcher for loading state control`
+- [ ] 6. [COMMIT] Commit Tts.kt wrapper
+  - Review: New package com.spellwriter.tts.sherpa created
+  - Commit: `feat: add sherpa-onnx Kotlin JNI wrapper for TTS integration`
 
 ---
 
-## Phase 3: GameViewModel AudioManager Injection
+## Phase 3: Model Configuration System
 
-- [x] 74. [TEST] Write tests for GameViewModel with injected AudioManager
-  - Test GameViewModel with null audioManager (game works without audio)
-  - Test GameViewModel with valid audioManager (TTS functions work)
-  - Test isTTSReady returns false when audioManager is null
-  - Test speakCurrentWord handles null audioManager gracefully
-  - Test audio playback (success/error sounds) with null audioManager
+### Step 3: Create Model Config
+- [ ] 7. [TEST] Write tests for TtsModelConfig
+  - Test getConfigForLanguage(GERMAN) returns correct model paths
+  - Test getConfigForLanguage(ENGLISH) returns correct model paths
+  - Test ModelConfig data class contains expected fields
+  - Test model directories match assets structure
 
-- [x] 75. [IMPL] Modify GameViewModel to accept AudioManager parameter
-  - Add `audioManager: AudioManager? = null` constructor parameter
-  - Remove line 114: `private val audioManager = AudioManager(context, _currentLanguage.value)`
-  - Make audioManager a constructor property
-  - Update `isTTSReady` exposure to handle null:
-    ```kotlin
-    val isTTSReady: StateFlow<Boolean> = audioManager?.isTTSReady
-        ?: MutableStateFlow(false).asStateFlow()
-    ```
-  - Verify all audioManager usages handle null (safe calls already in place)
+- [ ] 8. [IMPL] Implement TtsModelConfig
+  - Create: `app/src/main/java/com/spellwriter/tts/TtsModelConfig.kt`
+  - Add getConfigForLanguage() function with switch on AppLanguage
+  - German config: modelDir="vits-piper-de_DE-thorsten-low-int8", modelName="de_DE-thorsten-low.onnx"
+  - English config: modelDir="vits-piper-en_US-danny-low-int8", modelName="en_US-danny-low.onnx"
+  - Add espeakDataPath for espeak-ng-data location
+  - Create ModelConfig data class with all paths
 
-- [x] 76. [CHECK] Run GameViewModel tests
-  - Verify all new tests pass
-  - Verify existing tests still pass with default null parameter
-  - Test game flow works without AudioManager
-
-- [x] 77. [COMMIT] Commit GameViewModel changes
-  - Review changes
-  - Commit: `refactor: convert GameViewModel to accept injected AudioManager instead of creating internally`
-
----
-
-## Phase 4: GameScreen AudioManager Parameter
-
-- [x] 78. [TEST] Write tests for GameScreen with AudioManager parameter
-  - Test GameScreen renders with null audioManager
-  - Test GameScreen passes audioManager to GameViewModel
-  - Test GameViewModel receives correct audioManager instance
-  - Test remember() key includes audioManager for proper recomposition
-
-- [x] 79. [IMPL] Add audioManager parameter to GameScreen
-  - Add `audioManager: AudioManager? = null` parameter to GameScreen composable
-  - Update GameViewModel instantiation (line ~70):
-    ```kotlin
-    val viewModel = remember(starNumber, isReplaySession, audioManager) {
-        GameViewModel(
-            context = context,
-            starNumber = starNumber,
-            isReplaySession = isReplaySession,
-            progressRepository = progressRepository,
-            initialProgress = currentProgress,
-            audioManager = audioManager
-        )
-    }
-    ```
-
-- [x] 80. [CHECK] Run GameScreen tests
-  - Verify all new tests pass
-  - Verify GameScreen renders correctly with and without audioManager
-  - Test navigation flow unchanged
-
-- [x] 81. [COMMIT] Commit GameScreen changes
-  - Review changes
-  - Commit: `feat: add audioManager parameter to GameScreen for dependency injection`
-
----
-
-## Phase 5: HomeScreen Loading UI
-
-- [x] 82. [TEST] Write tests for HomeScreen loading states
-  - Test loading indicator appears when isTTSInitializing=true
-  - Test loading text displays correct string resource
-  - Test LinearProgressIndicator renders during loading
-  - Test Play button disabled when isTTSInitializing=true
-  - Test Play button enabled when isTTSInitializing=false
-  - Test error message displays when ttsError is not null
-  - Test error message hidden when ttsError is null
-  - Test LanguageSwitcher receives enabled=false during loading
-
-- [x] 83. [IMPL] Add loading UI to HomeScreen
-  - Add parameters: `isTTSInitializing: Boolean = false`, `ttsError: String? = null`
-  - Add loading indicator after WorldProgressRow (before Play button):
-    ```kotlin
-    if (isTTSInitializing) {
-        Spacer(modifier = Modifier.height(16.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.home_tts_loading),
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-    ```
-  - Add error message display below loading indicator
-  - Update Play button: `enabled = !isTTSInitializing`
-  - Update LanguageSwitcher: `LanguageSwitcher(onLanguageChanged, enabled = !isTTSInitializing)`
-
-- [x] 84. [CHECK] Run HomeScreen tests
-  - Verify all loading UI tests pass
-  - Verify button states change correctly
-  - Verify error messages display correctly
-  - Preview HomeScreen in different loading states
-
-- [x] 85. [COMMIT] Commit HomeScreen changes
-  - Review changes
-  - Commit: `feat: add TTS loading indicator and error handling to HomeScreen`
-
----
-
-## Phase 6: MainActivity TTS Initialization Logic
-
-- [x] 86. [TEST] Write tests for MainActivity TTS initialization
-  - Test audioManager state starts as null
-  - Test initializeTTS creates AudioManager with correct language
-  - Test initializeTTS sets isTTSInitializing=true during init
-  - Test initializeTTS sets isTTSInitializing=false after success
-  - Test initializeTTS navigates to GameScreen after success
-  - Test initializeTTS handles timeout (5s) and shows error
-  - Test initializeTTS prevents double-click (guard clause)
-  - Test audioManager reused on second Play click (no re-init)
-  - Test language change releases AudioManager and resets state
-  - Test DisposableEffect releases AudioManager on app dispose
-
-- [x] 87. [IMPL] Add TTS initialization state to MainActivity
-  - Add state variables in SpellWriterApp composable (after currentScreen, selectedStar):
-    ```kotlin
-    var audioManager by remember { mutableStateOf<AudioManager?>(null) }
-    var isTTSInitializing by remember { mutableStateOf(false) }
-    var ttsError by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
-    ```
-
-- [x] 88. [IMPL] Add initializeTTS function in SpellWriterApp
-  - Create function with Context and language parameters
-  - Add double-click guard: `if (isTTSInitializing) return`
-  - Set isTTSInitializing=true, ttsError=null
-  - Convert language string to AppLanguage enum
-  - Create AudioManager with language
-  - Launch coroutine with 5s timeout using withTimeoutOrNull
-  - Collect isTTSReady flow, navigate on success
-  - Handle timeout: set error message, navigate anyway
-  - Set selectedStar before navigation
-
-- [x] 89. [IMPL] Update HomeScreen callbacks
-  - Pass isTTSInitializing and ttsError to HomeScreen
-  - Update onPlayClick:
-    - Check if audioManager?.isTTSReady?.value == true
-    - If yes: navigate immediately
-    - If no: call initializeTTS()
-  - Update onStarClick with same logic (set selectedStar)
-  - Update onLanguageChanged:
-    - Release audioManager with audioManager?.release()
-    - Reset audioManager to null
-    - Reset isTTSInitializing to false
-    - Reset ttsError to null
-    - Update language and reload progress
-
-- [x] 90. [IMPL] Update GameScreen navigation
-  - Pass audioManager to GameScreen
-  - Keep audioManager in memory on onBackPress (don't release)
-  - Keep audioManager in memory on onStarComplete (don't release)
-
-- [x] 91. [IMPL] Add cleanup on dispose
-  - Add DisposableEffect(Unit) in SpellWriterApp
-  - In onDispose: audioManager?.release()
-
-- [x] 92. [CHECK] Run MainActivity integration tests
-  - Verify all TTS initialization tests pass
-  - Test full flow: Home → Play → Loading → Game
-  - Test replay flow: Game → Home → Play (immediate)
-  - Test language change flow
-  - Test error handling with TTS disabled
-
-- [x] 93. [COMMIT] Commit MainActivity changes
-  - Review all changes
-  - Commit: `feat: implement TTS initialization at MainActivity level with loading state management`
-
----
-
-## Phase 7: Integration Testing
-
-- [x] 94. [TEST] Write end-to-end integration tests
-  - Test complete flow: Launch → Play → Loading → Game → Word spoken
-  - Test replay flow: Game → Home → Play → Immediate navigation
-  - Test language change: EN → DE → Play → German TTS
-  - Test star replay: Click star → Loading → Game
-  - Test TTS failure: Timeout → Error message → Game without audio
-  - Test double-click prevention during loading
-  - Test language change during loading (cancel + reset)
-
-- [x] 95. [CHECK] Run full test suite
-  - Unit tests: `./gradlew test`
-  - Instrumented tests: `./gradlew connectedAndroidTest`
+- [ ] 9. [CHECK] Run TtsModelConfig tests
   - Verify all tests pass
-  - Check code coverage for new code paths
+  - Verify config matches asset directory structure
 
-- [x] 96. [COMMIT] Commit integration tests
-  - Review test coverage
-  - Commit: `test: add end-to-end integration tests for TTS initialization flow`
+- [ ] 10. [COMMIT] Commit model configuration
+  - Review: TtsModelConfig created with German and English support
+  - Commit: `feat: add TTS model configuration system for multi-language support`
 
 ---
 
-## Phase 8: Manual Testing & Edge Cases
+## Phase 4: AudioManager Refactoring - Part 1 (Asset Copying)
 
-- [x] 97. [MANUAL] Test on real device - Initial play flow
-  - Launch app
+### Step 4: Asset Copying Utilities
+- [ ] 11. [TEST] Write tests for espeak-ng-data asset copying
+  - Test copyEspeakDataToExternal() creates external directory
+  - Test copyAssetsRecursive() handles files and directories correctly
+  - Test copy skipped if target directory already exists
+  - Test IOException handled gracefully
+  - Mock Context.assets and File operations
+
+- [ ] 12. [IMPL] Implement asset copying utilities in AudioManager
+  - Add imports: java.io.File, kotlinx.coroutines.withContext, Dispatchers
+  - Add copyEspeakDataToExternal() suspending function
+  - Add copyAssetsRecursive(path: String) helper
+  - Add copyAssetFile(filename: String) helper
+  - Check if target exists before copying (optimization)
+  - Log copy operations for debugging
+
+- [ ] 13. [CHECK] Run asset copying tests
+  - Verify all tests pass
+  - Test on real device: Check external files directory after copy
+  - Verify espeak-ng-data files present and readable
+
+- [ ] 14. [COMMIT] Commit asset copying utilities
+  - Review: Asset copying functions added
+  - Commit: `feat: add espeak-ng-data asset copying utilities for sherpa-onnx`
+
+---
+
+## Phase 5: AudioManager Refactoring - Part 2 (TTS Initialization)
+
+### Step 5: Replace TTS Engine
+- [ ] 15. [TEST] Write tests for sherpa-onnx TTS initialization
+  - Test initializeTTS() creates OfflineTts successfully
+  - Test isTTSReady becomes true after successful init
+  - Test isTTSReady remains false on init failure
+  - Test initialization for German language
+  - Test initialization for English language
+  - Test exception handling (missing models, missing libs)
+  - Mock OfflineTts constructor and AssetManager
+
+- [ ] 16. [IMPL] Replace TextToSpeech with OfflineTts in AudioManager
+  - Remove imports: android.speech.tts.TextToSpeech, UtteranceProgressListener
+  - Add imports: com.spellwriter.tts.sherpa.OfflineTts, com.spellwriter.tts.TtsModelConfig
+  - Replace `private var tts: TextToSpeech?` with `private var tts: OfflineTts?`
+  - Remove getTTSLocale() function (no longer needed)
+  - Refactor initializeTTS() to use sherpa-onnx:
+    - Copy espeak-ng-data first
+    - Get ModelConfig for language
+    - Build OfflineTtsConfig using getOfflineTtsConfig()
+    - Create OfflineTts(context.assets, config)
+    - Set _isTTSReady.value = true on success
+    - Handle exceptions and log errors
+
+- [ ] 17. [CHECK] Run TTS initialization tests
+  - Verify all new tests pass
+  - Verify old TextToSpeech tests removed/updated
+  - Test initialization timing (should be <2s)
+
+- [ ] 18. [COMMIT] Commit TTS initialization refactoring
+  - Review: OfflineTts replaces TextToSpeech
+  - Commit: `refactor: replace Android TextToSpeech with sherpa-onnx OfflineTts`
+
+---
+
+## Phase 6: AudioManager Refactoring - Part 3 (AudioTrack Playback)
+
+### Step 6: AudioTrack Setup
+- [ ] 19. [TEST] Write tests for AudioTrack initialization
+  - Test initializeAudioTrack() creates AudioTrack with correct sample rate
+  - Test AudioTrack uses ENCODING_PCM_FLOAT
+  - Test AudioTrack uses CHANNEL_OUT_MONO
+  - Test AudioTrack starts in play state
+  - Test sample rate obtained from tts.sampleRate()
+  - Mock AudioTrack construction
+
+- [ ] 20. [IMPL] Implement AudioTrack initialization
+  - Add imports: android.media.AudioTrack, AudioFormat, AudioAttributes
+  - Add `private var track: AudioTrack?` field
+  - Implement initializeAudioTrack() function:
+    - Get sample rate from tts.sampleRate()
+    - Calculate buffer length with getMinBufferSize()
+    - Build AudioAttributes for speech/media
+    - Build AudioFormat for PCM_FLOAT/MONO
+    - Create AudioTrack in MODE_STREAM
+    - Call track.play()
+  - Call initializeAudioTrack() after OfflineTts creation in initializeTTS()
+
+- [ ] 21. [CHECK] Run AudioTrack tests
+  - Verify all tests pass
+  - Test on real device: Verify AudioTrack creates without crashes
+  - Check logs for sample rate value
+
+- [ ] 22. [COMMIT] Commit AudioTrack setup
+  - Review: AudioTrack initialization added
+  - Commit: `feat: add AudioTrack setup for PCM audio playback from sherpa-onnx`
+
+---
+
+## Phase 7: AudioManager Refactoring - Part 4 (Speech Synthesis)
+
+### Step 7: Replace speakWord() Implementation
+- [ ] 23. [TEST] Write tests for sherpa-onnx speech generation
+  - Test speakWord() calls tts.generateWithCallback()
+  - Test isSpeaking state changes: false → true → false
+  - Test onStart callback fires when generation starts
+  - Test onDone callback fires when generation completes
+  - Test onError callback fires on exception
+  - Test AudioTrack writes samples via callback
+  - Test empty word handling
+  - Test null TTS handling
+  - Mock OfflineTts.generateWithCallback()
+
+- [ ] 24. [IMPL] Refactor speakWord() to use sherpa-onnx
+  - Replace UtteranceProgressListener logic
+  - Add Dispatchers.IO coroutine launch
+  - Prepare AudioTrack: pause(), flush(), play()
+  - Set _isSpeaking.value = true, call onStart()
+  - Call tts.generateWithCallback() with:
+    - text = word
+    - sid = 0 (single speaker)
+    - speed = 0.9f
+    - callback = { samples -> track.write(); return 1 }
+  - Add delay(100) for final samples
+  - Set _isSpeaking.value = false, call onDone()
+  - Wrap in try-catch, call onError() on exception
+
+- [ ] 25. [CHECK] Run speech synthesis tests
+  - Verify all tests pass
+  - Test on real device: Click Play button
+  - Verify word pronunciation works
+  - Verify isSpeaking animation syncs
+  - Check audio quality
+
+- [ ] 26. [COMMIT] Commit speech synthesis refactoring
+  - Review: speakWord() now uses sherpa-onnx generation
+  - Commit: `feat: implement streaming audio synthesis with sherpa-onnx generateWithCallback`
+
+---
+
+## Phase 8: AudioManager Refactoring - Part 5 (Cleanup & Coroutines)
+
+### Step 8: Resource Cleanup
+- [ ] 27. [TEST] Write tests for resource cleanup
+  - Test release() stops AudioTrack
+  - Test release() releases AudioTrack
+  - Test release() calls tts.free()
+  - Test release() nullifies references
+  - Test CoroutineScope cancellation on release
+  - Test SoundManager.release() still called
+
+- [ ] 28. [IMPL] Update release() and add CoroutineScope
+  - Add imports: CoroutineScope, SupervisorJob, Dispatchers, cancel
+  - Add field: `private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)`
+  - Update release():
+    - Call coroutineScope.cancel()
+    - Call track?.stop(), track?.release(), track = null
+    - Call tts?.free(), tts = null
+    - Call soundManager.release()
+  - Replace all `viewModelScope.launch` with `coroutineScope.launch`
+
+- [ ] 29. [CHECK] Run cleanup tests
+  - Verify all tests pass
+  - Test on real device: Language switch (triggers release)
+  - Check memory profiler for leaks
+  - Verify no crashes on app close
+
+- [ ] 30. [COMMIT] Commit resource cleanup improvements
+  - Review: Proper AudioTrack and native memory cleanup
+  - Commit: `refactor: improve AudioManager resource cleanup with coroutine scope management`
+
+---
+
+## Phase 9: Integration Testing
+
+### Step 9: End-to-End Tests
+- [ ] 31. [TEST] Write end-to-end integration tests
+  - Test: Launch app → Play → Word spoken in German
+  - Test: Launch app → EN → Play → Word spoken in English
+  - Test: Game → Home → Play → AudioManager reused
+  - Test: DE → EN switch → Play → English voice
+  - Test: isTTSReady changes from false to true
+  - Test: isSpeaking syncs with audio playback
+  - Test: Multiple words in sequence
+  - Test: Error scenarios (missing libs, missing models)
+
+- [ ] 32. [CHECK] Run full integration test suite
+  - Run: `./gradlew connectedAndroidTest`
+  - Verify all tests pass
+  - Test on real device for audio verification
+  - Check logcat for sherpa-onnx logs
+
+- [ ] 33. [COMMIT] Commit integration tests
+  - Review: Complete test coverage for sherpa-onnx integration
+  - Commit: `test: add end-to-end integration tests for sherpa-onnx TTS`
+
+---
+
+## Phase 10: Manual Testing & Verification
+
+### Step 10: Device Testing
+- [ ] 34. [MANUAL] Test on real device - German voice
+  - Launch app (default German)
   - Click Play button
-  - Verify loading indicator appears immediately
-  - Verify "Preparing voice..." displays
-  - Verify progress bar animates
-  - Verify game loads after 0.5-2s
-  - Verify word is spoken automatically
+  - Verify loading indicator
+  - Verify German word pronunciation
+  - Check voice quality and clarity
+  - Verify ghost speaking animation
 
-- [x] 98. [MANUAL] Test on real device - Replay flow
-  - Complete game session
+- [ ] 35. [MANUAL] Test on real device - English voice
+  - Switch to English
+  - Click Play
+  - Verify English word pronunciation
+  - Compare voice quality with German
+  - Verify correct accent (US English)
+
+- [ ] 36. [MANUAL] Test on real device - Language switching
+  - Start session in German
   - Return to Home
-  - Click Play again
-  - Verify immediate navigation (no loading)
-  - Verify AudioManager reused
-
-- [x] 99. [MANUAL] Test on real device - Language change
-  - Initialize TTS (English)
-  - Change to German
+  - Switch to English
   - Click Play
-  - Verify loading appears again
-  - Verify German voice used
-  - Verify German UI text displayed
+  - Verify English voice used
+  - Verify no German audio remnants
+  - Check memory usage
 
-- [x] 100. [MANUAL] Test on real device - Star replay
-  - Earn at least one star
-  - Click star icon
-  - Verify same loading behavior
-  - Verify correct star level loads
+- [ ] 37. [MANUAL] Test on real device - Performance
+  - Measure first word latency (should be <500ms after first launch)
+  - Measure subsequent word latency (should be <200ms)
+  - Check memory usage (should be +~50MB)
+  - Monitor CPU during synthesis
+  - Verify no audio stuttering or glitches
 
-- [x] 101. [MANUAL] Test on real device - Error handling
-  - Disable TTS in device settings (or use emulator without TTS)
-  - Click Play
-  - Verify error message after 5s timeout
-  - Verify game still loads and works
-  - Verify no crashes
+- [ ] 38. [MANUAL] Test on real device - Error handling
+  - Test with missing espeak-ng-data (delete from external storage)
+  - Test with insufficient storage space
+  - Verify error logged but no crash
+  - Verify game still playable without audio
 
-- [x] 102. [MANUAL] Test on real device - Button states
-  - Click Play to start loading
-  - Observe Play button (should be greyed out)
-  - Try clicking Play again (should be ignored)
-  - Observe language buttons (should be greyed out)
-  - Try clicking language button (should be ignored)
-
-- [x] 103. [MANUAL] Test on real device - Language change during loading
-  - Click Play to start TTS init
-  - Immediately click language button during loading
-  - Verify loading stops
-  - Verify AudioManager released
-  - Verify language changes
-  - Click Play again
-  - Verify new loading starts
-
-- [x] 104. [MANUAL] Test on real device - Background/foreground
-  - Click Play to start loading
-  - Switch to another app (background)
-  - Return to app (foreground)
-  - Verify state preserved correctly
-  - Verify initialization completes or shows error
+- [ ] 39. [MANUAL] Test on emulator - Architecture compatibility
+  - Test on x86_64 emulator
+  - Test on arm64-v8a emulator
+  - Verify native libraries load correctly
+  - Verify audio playback works
 
 ---
 
-## Phase 9: Polish & Documentation
+## Phase 11: Performance Optimization
 
-- [x] 105. [REFACTOR] Code cleanup and optimization
-  - Review all new code for clarity
-  - Add/update KDoc comments
-  - Remove any debug logging
-  - Verify error handling is comprehensive
-  - Check for memory leaks (coroutine cleanup)
+### Step 11: Optimization
+- [ ] 40. [REFACTOR] Optimize espeak-ng-data copying
+  - Add check to skip copy if files already exist
+  - Add progress logging for long operations
+  - Consider zip compression for faster copy
+  - Test optimization on slow device
 
-- [x] 106. [CHECK] Build and lint verification
-  - Run `./gradlew compileDebugKotlin`
-  - Run `./gradlew lint`
-  - Fix any warnings or errors
-  - Verify app builds successfully
+- [ ] 41. [REFACTOR] Optimize AudioTrack buffer size
+  - Experiment with buffer size multipliers
+  - Balance latency vs glitch prevention
+  - Test on various devices
+  - Document optimal settings
 
-- [x] 107. [COMMIT] Commit refactoring and cleanup
-  - Review all polish changes
-  - Commit: `refactor: cleanup TTS initialization code and add documentation`
+- [ ] 42. [CHECK] Performance benchmarks
+  - Measure initialization time
+  - Measure generation time per word
+  - Measure memory footprint
+  - Compare with old TextToSpeech baseline
+  - Document improvements
+
+- [ ] 43. [COMMIT] Commit performance optimizations
+  - Review: Optimizations applied
+  - Commit: `perf: optimize asset copying and AudioTrack buffering for sherpa-onnx`
 
 ---
 
-## Phase 10: Final Review & Acceptance
+## Phase 12: Documentation & Polish
 
-- [x] 108. [REVIEW] Verify all acceptance criteria
-  - AC1: Loading indicator displays correctly ✓
-  - AC2: Buttons disabled during loading ✓
-  - AC3: Automatic navigation on success ✓
-  - AC4: AudioManager reused on replay ✓
-  - AC5: Language change resets state ✓
-  - AC6: TTS failure handled gracefully ✓
-  - AC7: Double-click prevention works ✓
-  - AC8: Localization correct (EN/DE) ✓
+### Step 12: Code Documentation
+- [ ] 44. [REFACTOR] Add KDoc comments
+  - Document TtsModelConfig.getConfigForLanguage()
+  - Document AudioManager.initializeTTS()
+  - Document AudioManager.speakWord() with sherpa-onnx details
+  - Document asset copying functions
+  - Document threading model
+  - Document native memory management
 
-- [x] 109. [REVIEW] Verify all edge cases handled
-  - E1: Language change during loading ✓
-  - E2: Star replay button ✓
-  - E3: App backgrounded during init ✓
-  - E4: Back navigation from game ✓
-  - E5: TTS not supported on device ✓
-  - E6: Memory pressure / cleanup ✓
+- [ ] 45. [REFACTOR] Update README with sherpa-onnx info
+  - Add sherpa-onnx section explaining integration
+  - Document native library requirements
+  - Document model files and assets
+  - Add troubleshooting section
+  - Link to sherpa-onnx documentation
 
-- [x] 110. [CHECK] Final build verification
+- [ ] 46. [CHECK] Code quality verification
+  - Run: `./gradlew lint`
+  - Fix any warnings
+  - Run: `./gradlew detekt` (if configured)
+  - Verify code formatting consistent
+  - Review for dead code or TODOs
+
+- [ ] 47. [COMMIT] Commit documentation and polish
+  - Review: Documentation complete
+  - Commit: `docs: add comprehensive documentation for sherpa-onnx TTS integration`
+
+---
+
+## Phase 13: Final Verification & Acceptance
+
+### Step 13: Final Checks
+- [ ] 48. [CHECK] Build verification
   - Clean build: `./gradlew clean build`
-  - Run full test suite
-  - Test on multiple devices (if available)
-  - Verify no regressions in existing features
+  - Verify no warnings or errors
+  - Check APK size increase (expected: ~50MB)
+  - Verify all architectures included
 
-- [x] 111. [COMMIT] Final commit with comprehensive message
-  - Review entire feature implementation
+- [ ] 49. [CHECK] Test suite verification
+  - Run all unit tests: `./gradlew test`
+  - Run all instrumented tests: `./gradlew connectedAndroidTest`
+  - Verify 100% pass rate
+  - Check code coverage (should be >80% for new code)
+
+- [ ] 50. [REVIEW] Acceptance criteria verification
+  - ✅ Native libraries load successfully
+  - ✅ TTS initializes for German and English
+  - ✅ Words pronounced clearly with natural voice
+  - ✅ Speaking animation syncs with audio
+  - ✅ Language switching works without crashes
+  - ✅ Memory usage acceptable (<100MB increase)
+  - ✅ No audio artifacts or stuttering
+  - ✅ Game playable if TTS fails
+  - ✅ Extensible for more languages
+
+- [ ] 51. [COMMIT] Final commit
+  - Review entire implementation
   - Commit message:
     ```
-    feat: move TTS initialization to HomeScreen with loading indicator
+    feat: replace Android TTS with sherpa-onnx offline TTS using Piper models
 
-    - TTS now initializes on Play button click instead of in GameViewModel
-    - Loading indicator shows "Preparing voice..." during initialization
-    - Play and language buttons disabled during loading
-    - AudioManager kept in memory at MainActivity level for reuse
-    - Error message displayed if TTS fails, game still playable
-    - Language change releases AudioManager and forces re-initialization
-    - Double-click prevention during initialization
-    - Full localization support (English/German)
+    Major improvements:
+    - Replaced Android TextToSpeech with sherpa-onnx OfflineTts
+    - Integrated VITS Piper models for German and English
+    - Implemented AudioTrack for PCM audio playback
+    - Added streaming audio synthesis with generateWithCallback
+    - Proper native memory management with tts.free()
+    - espeak-ng-data copying from assets to external storage
+    - Multi-language support with TtsModelConfig
+    - Graceful error handling and fallback
 
-    Fixes race condition on slow devices where word would not speak
-    automatically on GameScreen load.
+    Technical details:
+    - Native libs: libsherpa-onnx-jni.so, libonnxruntime.so
+    - Models: vits-piper-de_DE-thorsten-low-int8, vits-piper-en_US-danny-low-int8
+    - Sample rate: 22050 Hz (Piper default)
+    - Threading: Dispatchers.IO for synthesis, AudioTrack callback for playback
+    - Memory: ~50MB increase (models + runtime)
+
+    Benefits:
+    - Better voice quality (neural TTS)
+    - Fully offline (no dependency on system TTS)
+    - Consistent across all devices
+    - Extensible for additional languages
 
     Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
     ```
 
 ---
 
-## Feature 2 Completion Checklist
+## Phase 14: Future Extensibility Planning
 
-### All Phases Complete
-- [x] Phase 1: String Resources
-- [x] Phase 2: LanguageSwitcher
-- [x] Phase 3: GameViewModel
-- [x] Phase 4: GameScreen
-- [x] Phase 5: HomeScreen
-- [x] Phase 6: MainActivity
-- [x] Phase 7: Integration Testing
-- [x] Phase 8: Manual Testing
-- [x] Phase 9: Polish
-- [x] Phase 10: Final Review
+### Step 14: Language Addition Guide
+- [ ] 52. [DOCS] Create language addition guide
+  - Document step-by-step process
+  - Example: Adding French support
+  - Include model download URLs
+  - Include AppLanguage enum update
+  - Include TtsModelConfig update
+  - Include asset directory structure
 
-### Success Metrics
-- [x] No TTS race conditions on slow devices
-- [x] Clear user feedback during initialization
-- [x] Faster subsequent play sessions (no re-init)
-- [x] Graceful degradation without audio
-- [x] No memory leaks or resource issues
-- [x] All tests passing (unit + integration + manual)
-- [x] Build successful with no warnings
-- [ ] Feature accepted by product owner (pending manual device testing)
+- [ ] 53. [DOCS] Document alternative model types
+  - Matcha TTS integration guide
+  - Kokoro multi-speaker integration
+  - Model conversion process
+  - Performance trade-offs
+
+---
+
+## Completion Checklist
+
+### Prerequisites
+- [ ] Native libraries downloaded and installed
+- [ ] Build successful with native libs
+
+### Core Implementation
+- [ ] Tts.kt wrapper copied and adapted
+- [ ] TtsModelConfig implemented
+- [ ] AudioManager refactored for sherpa-onnx
+- [ ] Asset copying utilities working
+- [ ] AudioTrack playback functional
+- [ ] Resource cleanup implemented
+
+### Testing
+- [ ] Unit tests passing (100%)
+- [ ] Integration tests passing (100%)
+- [ ] Manual device testing complete
+- [ ] Performance benchmarks acceptable
+
+### Quality
+- [ ] Code documented (KDoc)
+- [ ] README updated
+- [ ] Lint warnings resolved
+- [ ] Code review complete
+
+### Acceptance
+- [ ] All success criteria met
+- [ ] Voice quality acceptable
+- [ ] Performance acceptable
+- [ ] Memory usage acceptable
+- [ ] Feature approved
+
+---
+
+## Notes
+
+**Key Files:**
+- `/Users/florentmartin/Sites/sherpa-onnx/sherpa-onnx/kotlin-api/Tts.kt` - Source for JNI wrapper
+- `app/src/main/java/com/spellwriter/audio/AudioManager.kt` - Main refactoring target
+- `app/src/main/assets/vits-piper-*` - Model directories
+
+**Critical Decisions:**
+- Use streaming callback for lower latency
+- Copy espeak-ng-data to external storage (file path requirement)
+- Maintain existing AudioManager API contract
+- 2 threads for TTS synthesis (balance of speed/CPU)
+
+**Risks & Mitigations:**
+- espeak-ng-data copy failure → Check permissions, use app-specific dir
+- Native library load failure → Try-catch, graceful degradation
+- AudioTrack underrun → Use WRITE_BLOCKING, sufficient buffer
+- First-word latency → Pre-initialize TTS (already doing)
