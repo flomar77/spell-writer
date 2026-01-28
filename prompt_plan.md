@@ -98,7 +98,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Test on real device: Check external files directory after copy
   - Verify espeak-ng-data files present and readable
 
-- [ ] 14. [COMMIT] Commit asset copying utilities
+- [X] 14. [COMMIT] Commit asset copying utilities
   - Review: Asset copying functions added
   - Commit: `feat: add espeak-ng-data asset copying utilities for sherpa-onnx`
 
