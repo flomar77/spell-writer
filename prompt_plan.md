@@ -143,7 +143,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 ## Phase 6: AudioManager Refactoring - Part 3 (AudioTrack Playback)
 
 ### Step 6: AudioTrack Setup
-- [ ] 19. [TEST] Write tests for AudioTrack initialization
+- [X] 19. [TEST] Write tests for AudioTrack initialization
   - Test initializeAudioTrack() creates AudioTrack with correct sample rate
   - Test AudioTrack uses ENCODING_PCM_FLOAT
   - Test AudioTrack uses CHANNEL_OUT_MONO
