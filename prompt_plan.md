@@ -69,7 +69,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
   - Verify all tests pass
   - Verify config matches asset directory structure
 
-- [ ] 10. [COMMIT] Commit model configuration
+- [X] 10. [COMMIT] Commit model configuration
   - Review: TtsModelConfig created with German and English support
   - Commit: `feat: add TTS model configuration system for multi-language support`
 
