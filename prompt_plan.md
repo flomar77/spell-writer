@@ -177,7 +177,7 @@ Replace Android system TTS with sherpa-onnx offline TTS using Piper models for b
 ## Phase 7: AudioManager Refactoring - Part 4 (Speech Synthesis)
 
 ### Step 7: Replace speakWord() Implementation
-- [ ] 23. [TEST] Write tests for sherpa-onnx speech generation
+- [X] 23. [TEST] Write tests for sherpa-onnx speech generation
   - Test speakWord() calls tts.generateWithCallback()
   - Test isSpeaking state changes: false → true → false
   - Test onStart callback fires when generation starts
