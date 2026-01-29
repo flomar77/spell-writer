@@ -30,6 +30,8 @@
     <string name="new_world_unlocked">New world unlocked!</string>
     <string name="continue_btn">CONTINUE</string>
     <string name="home_btn">HOME</string>
+    <string name="celebration_continue">Continue</string>
+    <string name="celebration_gif_description">Reward animation</string>
 
     <!-- Story 3.3: Language Indicator (AC7) -->
     <string name="language_name">English</string>

@@ -34,6 +34,8 @@
     <string name="new_world_unlocked">Neue Welt freigeschaltet!</string>
     <string name="continue_btn">WEITER</string>
     <string name="home_btn">START</string>
+    <string name="celebration_continue">Weiter</string>
+    <string name="celebration_gif_description">Belohnungsanimation</string>
 
     <!-- Story 3.3: Language Indicator (AC7) -->
     <string name="language_name">Deutsch</string>
