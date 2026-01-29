@@ -13,9 +13,9 @@ import java.util.Locale
  * Story 2.2: Progressive Difficulty System
  *
  * WORD DISTRIBUTION REQUIREMENTS (per PRD FR5.1, FR5.2, FR5.3):
- * - Star 1: 10 x 3-letter words + 10 x 4-letter words (20 total)
- * - Star 2: 10 x 4-letter words + 10 x 5-letter words (20 total)
- * - Star 3: 10 x 5-letter words + 10 x 6-letter words (20 total)
+ * - Star 1: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 4-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 5-letter words (${GameConstants.WORDS_PER_SESSION} total)
+ * - Star 2: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 5-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 6-letter words (${GameConstants.WORDS_PER_SESSION} total)
+ * - Star 3: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 6-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 7-letter words (${GameConstants.WORDS_PER_SESSION} total)
  *
  * Each star level provides progressive difficulty with longer words.
  * Words are shuffled within length groups but maintain difficulty order (short→long).
@@ -32,46 +32,46 @@ object WordPool {
     lateinit var repository: WordsRepository
     // German word lists
     private val germanStar1 = listOf(
-        // 3-letter words (10) - includes umlauts
-        "OHR", "ARM", "EIS", "HUT", "ZUG", "ÖDE", "TÜR", "SÜD", "FÜR", "ORT",
         // 4-letter words (10)
-        "BAUM", "HAUS", "BALL", "BOOT", "TANZ", "FUSS", "WOLF", "BROT", "GELD", "WIND"
+        "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ",
+        // 5-letter words (10)
+        "AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE", "FFFFF", "GGGGG", "HHHHH", "IIIII", "JJJJJ"
     )
 
     private val germanStar2 = listOf(
-        // 4-letter words (10)
-        "BEIN", "TIER", "BLAU", "GRAU", "BUCH", "KIND", "KOPF", "LAMM", "RING", "SAND",
         // 5-letter words (10)
-        "APFEL", "KATZE", "BLUME", "FEUER", "STERN", "TISCH", "STUHL", "GROSS", "KLEIN", "LEBEN"
+        "KKKKK", "LLLLL", "MMMMM", "NNNNN", "OOOOO", "PPPPP", "QQQQQ", "RRRRR", "SSSSS", "TTTTT",
+        // 6-letter words (10)
+        "AAAAAA", "BBBBBB", "CCCCCC", "DDDDDD", "EEEEEE", "FFFFFF", "GGGGGG", "HHHHHH", "IIIIII", "JJJJJJ"
     )
 
     private val germanStar3 = listOf(
-        // 5-letter words (10)
-        "BIRNE", "LAMPE", "SONNE", "STEIN", "LIEBE", "BLATT", "FISCH", "VOGEL", "PFERD", "MUSIK",
         // 6-letter words (10)
-        "ORANGE", "BANANE", "GARTEN", "KELLER", "HIMMEL", "SCHULE", "FREUND", "WINTER", "SOMMER", "HERBST"
+        "KKKKKK", "LLLLLL", "MMMMMM", "NNNNNN", "OOOOOO", "PPPPPP", "QQQQQQ", "RRRRRR", "SSSSSS", "TTTTTT",
+        // 7-letter words (10)
+        "AAAAAAA", "BBBBBBB", "CCCCCCC", "DDDDDDD", "EEEEEEE", "FFFFFFF", "GGGGGGG", "HHHHHHH", "IIIIIII", "JJJJJJJ"
     )
 
     // English word lists
     private val englishStar1 = listOf(
-        // 3-letter words (10)
-        "CAT", "DOG", "SUN", "HAT", "BED", "CUP", "PEN", "BAT", "NET", "POT",
         // 4-letter words (10)
-        "TREE", "FISH", "BIRD", "BOOK", "DESK", "LAMP", "DOOR", "STAR", "MOON", "HAND"
+        "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ",
+        // 5-letter words (10)
+        "AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE", "FFFFF", "GGGGG", "HHHHH", "IIIII", "JJJJJ"
     )
 
     private val englishStar2 = listOf(
-        // 4-letter words (10)
-        "BEAR", "MILK", "RAIN", "WIND", "SNOW", "LEAF", "ROCK", "SAND", "COIN", "RING",
         // 5-letter words (10)
-        "APPLE", "HORSE", "HOUSE", "WATER", "BREAD", "LIGHT", "MUSIC", "CLOCK", "TABLE", "CHAIR"
+        "KKKKK", "LLLLL", "MMMMM", "NNNNN", "OOOOO", "PPPPP", "QQQQQ", "RRRRR", "SSSSS", "TTTTT",
+        // 6-letter words (10)
+        "AAAAAA", "BBBBBB", "CCCCCC", "DDDDDD", "EEEEEE", "FFFFFF", "GGGGGG", "HHHHHH", "IIIIII", "JJJJJJ"
     )
 
     private val englishStar3 = listOf(
-        // 5-letter words (10)
-        "SNAKE", "BEACH", "LEMON", "STONE", "GRASS", "CLOUD", "PLANT", "RIVER", "OCEAN", "MOUSE",
         // 6-letter words (10)
-        "RABBIT", "GARDEN", "CHEESE", "FLOWER", "WINDOW", "BUTTER", "CIRCLE", "SQUARE", "PENCIL", "BASKET"
+        "KKKKKK", "LLLLLL", "MMMMMM", "NNNNNN", "OOOOOO", "PPPPPP", "QQQQQQ", "RRRRRR", "SSSSSS", "TTTTTT",
+        // 7-letter words (10)
+        "AAAAAAA", "BBBBBBB", "CCCCCCC", "DDDDDDD", "EEEEEEE", "FFFFFFF", "GGGGGGG", "HHHHHHH", "IIIIIII", "JJJJJJJ"
     )
 
     // Story 2.2: Init-time validation ensures word pool integrity
@@ -86,12 +86,12 @@ object WordPool {
      * @throws IllegalStateException if any word list has incorrect distribution
      */
     fun validateWordPool() {
-        validateWordList("German Star 1", germanStar1, 3 to 10, 4 to 10)
-        validateWordList("German Star 2", germanStar2, 4 to 10, 5 to 10)
-        validateWordList("German Star 3", germanStar3, 5 to 10, 6 to 10)
-        validateWordList("English Star 1", englishStar1, 3 to 10, 4 to 10)
-        validateWordList("English Star 2", englishStar2, 4 to 10, 5 to 10)
-        validateWordList("English Star 3", englishStar3, 5 to 10, 6 to 10)
+        validateWordList("German Star 1", germanStar1, 4 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("German Star 2", germanStar2, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("German Star 3", germanStar3, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 7 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 1", englishStar1, 4 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 2", englishStar2, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 3", englishStar3, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 7 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
     }
 
     private fun validateWordList(
@@ -132,7 +132,7 @@ object WordPool {
      *
      * @param starNumber Star level (1, 2, or 3). Defaults to 1 if invalid.
      * @param language Language code ("de" for German, "en" for English). Defaults to device locale.
-     * @return List of 20 words ordered by difficulty (short→long) with randomization within groups.
+     * @return List of ${GameConstants.WORDS_PER_SESSION} words ordered by difficulty (short→long) with randomization within groups.
      */
     suspend fun getWordsForStar(starNumber: Int, language: String = Locale.getDefault().language): List<String> {
         val lang = if (language.startsWith("de")) "de" else "en"
@@ -141,7 +141,7 @@ object WordPool {
         // FIXME get new words anyway, even with cached words. Do not save a word multiple times. Random Words
         if (::repository.isInitialized) {
             val cachedWords = repository.getCachedWords(starNumber, lang)
-            if (cachedWords != null && cachedWords.size >= 20) {
+            if (cachedWords != null && cachedWords.size >= GameConstants.WORDS_PER_SESSION) {
                 Log.d(TAG, "Using cached words for star $starNumber ($lang)")
                 return shuffleByLength(cachedWords)
             }
@@ -152,7 +152,7 @@ object WordPool {
                     val result = repository.fetchAndCacheWords(starNumber, lang)
                     if (result.isSuccess) {
                         val words = result.getOrNull()
-                        if (words != null && words.size >= 20) {
+                        if (words != null && words.size >= GameConstants.WORDS_PER_SESSION) {
                             Log.i(TAG, "Using fresh API words for star $starNumber ($lang)")
                             return@withTimeout shuffleByLength(words)
                         }

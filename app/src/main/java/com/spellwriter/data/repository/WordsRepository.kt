@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.network.RetrofitInstance
 import com.spellwriter.data.repository.WordRepository.getSystemLanguage
 import kotlinx.coroutines.flow.first
@@ -55,24 +56,24 @@ class WordsRepository(private val context: Context) {
             val (shortLength, longLength) = getLengthsForStar(star)
 
             // Fetch two groups of words
-            val shortWords = api.getWords(number = 10, length = shortLength, lang = lang)
-            val longWords = api.getWords(number = 10, length = longLength, lang = lang)
+            val shortWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, length = shortLength, lang = lang)
+            val longWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, length = longLength, lang = lang)
 
             val allWords = (shortWords + longWords).map { it.uppercase() }.distinct()
 
             // Validate word count and lengths
-            if (allWords.size < 20) {
+            if (allWords.size < GameConstants.WORDS_PER_SESSION) {
                 Log.w(TAG, "API returned insufficient words: ${allWords.size} for star $star")
                 return Result.failure(Exception("Insufficient words returned from API"))
             }
 
-            val validWords = allWords.take(20)
+            val validWords = allWords.take(GameConstants.WORDS_PER_SESSION)
 
             // Validate lengths
             val shortCount = validWords.count { it.length == shortLength }
             val longCount = validWords.count { it.length == longLength }
 
-            if (shortCount < 10 || longCount < 10) {
+            if (shortCount < GameConstants.WORDS_PER_DIFFICULTY_GROUP || longCount < GameConstants.WORDS_PER_DIFFICULTY_GROUP) {
                 Log.w(TAG, "Invalid word distribution: $shortCount short, $longCount long for star $star")
                 return Result.failure(Exception("Invalid word length distribution"))
             }
@@ -146,12 +147,12 @@ class WordsRepository(private val context: Context) {
      * FIXME This class actually doesnt need to know about Stars (single responsibility principle)
      */
     private fun getLengthsForStar(star: Int): Pair<Int, Int> {
-        return when (star) {
-            1 -> 3 to 4
-            2 -> 4 to 5
-            3 -> 5 to 6
-            else -> 3 to 4
-        }
+    return when (star) {
+        1 -> 4 to 5
+        2 -> 5 to 6
+        3 -> 6 to 7
+        else -> 3 to 4
+    }
     }
     private fun getAllLength() = listOf(3,4,5,6)
 }

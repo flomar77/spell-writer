@@ -1,5 +1,6 @@
 package com.spellwriter.viewmodel
 
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.GameState
 import org.junit.Assert.*
 import org.junit.Test
@@ -49,7 +50,7 @@ class GameViewModelTest {
     fun gameState_wordsCompleted_tracksProgress() {
         val state = GameState(wordsCompleted = 5)
         assertEquals(5, state.wordsCompleted)
-        assertTrue(state.wordsCompleted <= 20)  // Max 20 words per session
+        assertTrue(state.wordsCompleted <= GameConstants.WORDS_PER_SESSION)  // Max ${GameConstants.WORDS_PER_SESSION} words per session
     }
 
     // Story 2.1: Session Management Tests
@@ -103,7 +104,7 @@ class GameViewModelTest {
     fun gameState_sessionNotComplete_untilAll20UniqueWords() {
         // 19 words completed with 1 in remaining should not be complete
         val state = GameState(
-            wordsCompleted = 19,
+            wordsCompleted = GameConstants.WORDS_PER_SESSION - 1,
             remainingWords = listOf("FINAL"),
             sessionComplete = false
         )
@@ -191,14 +192,14 @@ class GameViewModelTest {
     fun gameState_sessionComplete_preventsMoreWordsFromBeingAdded() {
         // When sessionComplete is true, UI should prevent further word presentation
         val state = GameState(
-            wordsCompleted = 20,
+            wordsCompleted = GameConstants.WORDS_PER_SESSION,
             sessionComplete = true,
             remainingWords = emptyList(),
             failedWords = emptyList()
         )
 
         assertTrue(state.sessionComplete)
-        assertEquals(20, state.wordsCompleted)
+        assertEquals(GameConstants.WORDS_PER_SESSION, state.wordsCompleted)
         assertTrue(state.remainingWords.isEmpty())
     }
 

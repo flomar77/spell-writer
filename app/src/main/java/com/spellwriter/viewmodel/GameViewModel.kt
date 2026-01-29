@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.AudioManager
 import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
@@ -30,7 +31,7 @@ import kotlinx.coroutines.launch
  * Manages game state, TTS, sound effects, and word progression.
  * Story 1.4: Core Word Gameplay
  * Story 1.5: Ghost expression management with auto-reset and TTS speaking state
- * Story 2.1: 20-word learning sessions with retry logic and session completion
+ * Story 2.1: ${GameConstants.WORDS_PER_SESSION}-word learning sessions with retry logic and session completion
  * Story 2.3: Progress persistence and word performance tracking
  * Story 3.1: Session control and exit flow with session persistence
  * Hint Feature: Grey hint letters after 5 consecutive failures to help young learners
@@ -345,8 +346,8 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.HAPPY)
 
-        if (newWordsCompleted >= 20) {
-            Log.d(TAG, "Session complete - all 20 unique words finished")
+        if (newWordsCompleted >= GameConstants.WORDS_PER_SESSION) {
+            Log.d(TAG, "Session complete - all ${GameConstants.WORDS_PER_SESSION} unique words finished")
 
             viewModelScope.launch {
                 delay(WORD_COMPLETE_DISPLAY_DELAY_MS)

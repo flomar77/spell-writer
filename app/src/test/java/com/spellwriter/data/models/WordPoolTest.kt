@@ -21,40 +21,40 @@ class WordPoolTest {
     @Test
     fun getWordsForStar_returnsCorrectCount() = runTest {
         val words = WordPool.getWordsForStar(1, "de")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
     fun getWordsForStar_star1HasCorrectLengths_german() = runTest {
         val words = WordPool.getWordsForStar(1, "de")
-        val threeLetter = words.filter { it.length == 3 }
         val fourLetter = words.filter { it.length == 4 }
-        assertEquals(10, threeLetter.size)
-        assertEquals(10, fourLetter.size)
+        val fiveLetter = words.filter { it.length == 5 }
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, fourLetter.size)
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, fiveLetter.size)
     }
 
     @Test
     fun getWordsForStar_star2HasCorrectLengths_german() = runTest {
         val words = WordPool.getWordsForStar(2, "de")
-        val fourLetter = words.filter { it.length == 4 }
         val fiveLetter = words.filter { it.length == 5 }
-        assertEquals(10, fourLetter.size)
-        assertEquals(10, fiveLetter.size)
+        val sixLetter = words.filter { it.length == 6 }
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, fiveLetter.size)
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, sixLetter.size)
     }
 
     @Test
     fun getWordsForStar_star3HasCorrectLengths_german() = runTest {
         val words = WordPool.getWordsForStar(3, "de")
-        val fiveLetter = words.filter { it.length == 5 }
         val sixLetter = words.filter { it.length == 6 }
-        assertEquals(10, fiveLetter.size)
-        assertEquals(10, sixLetter.size)
+        val sevenLetter = words.filter { it.length == 7 }
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, sixLetter.size)
+        assertEquals(GameConstants.WORDS_PER_DIFFICULTY_GROUP, sevenLetter.size)
     }
 
     @Test
     fun getWordsForStar_english_returnsCorrectCount() = runTest {
         val words = WordPool.getWordsForStar(1, "en")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     // Story 2.2: Comprehensive word length validation tests (AC1, AC2, AC3)
@@ -62,52 +62,52 @@ class WordPoolTest {
     @Test
     fun getWordsForStar_star1HasCorrectLengths_english() = runTest {
         val words = WordPool.getWordsForStar(1, "en")
-        val threeLetter = words.filter { it.length == 3 }
         val fourLetter = words.filter { it.length == 4 }
-        assertEquals("Star 1 English should have exactly 10 three-letter words", 10, threeLetter.size)
-        assertEquals("Star 1 English should have exactly 10 four-letter words", 10, fourLetter.size)
+        val fiveLetter = words.filter { it.length == 5 }
+        assertEquals("Star 1 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} four-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, fourLetter.size)
+        assertEquals("Star 1 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} five-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, fiveLetter.size)
     }
 
     @Test
     fun getWordsForStar_star2HasCorrectLengths_english() = runTest {
         val words = WordPool.getWordsForStar(2, "en")
-        val fourLetter = words.filter { it.length == 4 }
         val fiveLetter = words.filter { it.length == 5 }
-        assertEquals("Star 2 English should have exactly 10 four-letter words", 10, fourLetter.size)
-        assertEquals("Star 2 English should have exactly 10 five-letter words", 10, fiveLetter.size)
+        val sixLetter = words.filter { it.length == 6 }
+        assertEquals("Star 2 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} five-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, fiveLetter.size)
+        assertEquals("Star 2 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} six-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, sixLetter.size)
     }
 
     @Test
     fun getWordsForStar_star3HasCorrectLengths_english() = runTest {
         val words = WordPool.getWordsForStar(3, "en")
-        val fiveLetter = words.filter { it.length == 5 }
         val sixLetter = words.filter { it.length == 6 }
-        assertEquals("Star 3 English should have exactly 10 five-letter words", 10, fiveLetter.size)
-        assertEquals("Star 3 English should have exactly 10 six-letter words", 10, sixLetter.size)
+        val sevenLetter = words.filter { it.length == 7 }
+        assertEquals("Star 3 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} six-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, sixLetter.size)
+        assertEquals("Star 3 English should have exactly ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} seven-letter words", GameConstants.WORDS_PER_DIFFICULTY_GROUP, sevenLetter.size)
     }
 
     @Test
     fun getWordsForStar_star2ReturnsCorrectCount_german() = runTest {
         val words = WordPool.getWordsForStar(2, "de")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
     fun getWordsForStar_star3ReturnsCorrectCount_german() = runTest {
         val words = WordPool.getWordsForStar(3, "de")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
     fun getWordsForStar_star2ReturnsCorrectCount_english() = runTest {
         val words = WordPool.getWordsForStar(2, "en")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
     fun getWordsForStar_star3ReturnsCorrectCount_english() = runTest {
         val words = WordPool.getWordsForStar(3, "en")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
@@ -148,13 +148,13 @@ class WordPoolTest {
         // By checking that short words always come before long words
         repeat(10) {
             val words = WordPool.getWordsForStar(1, "de")
-            val firstTen = words.take(10)
-            val lastTen = words.drop(10)
+            val firstTen = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val lastTen = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            // All first 10 must be 3-letter (shorter group)
-            assertTrue("First group should all be 3-letter words", firstTen.all { it.length == 3 })
-            // All last 10 must be 4-letter (longer group)
-            assertTrue("Second group should all be 4-letter words", lastTen.all { it.length == 4 })
+            // All first 10 must be 4-letter (shorter group)
+            assertTrue("First group should all be 4-letter words", firstTen.all { it.length == 4 })
+            // All last 10 must be 5-letter (longer group)
+            assertTrue("Second group should all be 5-letter words", lastTen.all { it.length == 5 })
         }
     }
 
@@ -162,11 +162,11 @@ class WordPoolTest {
     fun getWordsForStar_shufflingOccursWithinLengthGroups_english() = runTest {
         repeat(10) {
             val words = WordPool.getWordsForStar(1, "en")
-            val firstTen = words.take(10)
-            val lastTen = words.drop(10)
+            val firstTen = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val lastTen = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First group should all be 3-letter words", firstTen.all { it.length == 3 })
-            assertTrue("Second group should all be 4-letter words", lastTen.all { it.length == 4 })
+            assertTrue("First group should all be 4-letter words", firstTen.all { it.length == 4 })
+            assertTrue("Second group should all be 5-letter words", lastTen.all { it.length == 5 })
         }
     }
 
@@ -176,25 +176,25 @@ class WordPoolTest {
         val germanWords = WordPool.getWordsForStar(2, "de")
         val englishWords = WordPool.getWordsForStar(2, "en")
 
-        // Both should have same structure: 10 shorter words, then 10 longer words
-        val germanShorter = germanWords.take(10)
-        val germanLonger = germanWords.drop(10)
-        val englishShorter = englishWords.take(10)
-        val englishLonger = englishWords.drop(10)
+        // Both should have same structure: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} shorter words, then ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} longer words
+        val germanShorter = germanWords.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        val germanLonger = germanWords.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        val englishShorter = englishWords.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        val englishLonger = englishWords.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-        // German Star 2: 4-letter then 5-letter
-        assertTrue("German shorter should be 4-letter", germanShorter.all { it.length == 4 })
-        assertTrue("German longer should be 5-letter", germanLonger.all { it.length == 5 })
+        // German Star 2: 5-letter then 6-letter
+        assertTrue("German shorter should be 5-letter", germanShorter.all { it.length == 5 })
+        assertTrue("German longer should be 6-letter", germanLonger.all { it.length == 6 })
 
-        // English Star 2: 4-letter then 5-letter (same pattern)
-        assertTrue("English shorter should be 4-letter", englishShorter.all { it.length == 4 })
-        assertTrue("English longer should be 5-letter", englishLonger.all { it.length == 5 })
+        // English Star 2: 5-letter then 6-letter (same pattern)
+        assertTrue("English shorter should be 5-letter", englishShorter.all { it.length == 5 })
+        assertTrue("English longer should be 6-letter", englishLonger.all { it.length == 6 })
     }
 
     @Test
     fun getWordsForStar_invalidStar_defaultsToStar1() = runTest {
         val words = WordPool.getWordsForStar(99, "de")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
@@ -210,12 +210,12 @@ class WordPoolTest {
         // Run multiple times to ensure ordering is consistent despite shuffling within groups
         repeat(5) {
             val words = WordPool.getWordsForStar(1, "de")
-            // First 10 should be 3-letter, next 10 should be 4-letter
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            // First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} should be 4-letter, next ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} should be 5-letter
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 3-letter", firstHalf.all { it.length == 3 })
-            assertTrue("Last 10 words should all be 4-letter", secondHalf.all { it.length == 4 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 4-letter", firstHalf.all { it.length == 4 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 5-letter", secondHalf.all { it.length == 5 })
         }
     }
 
@@ -223,11 +223,11 @@ class WordPoolTest {
     fun getWordsForStar_star1_shortWordsBeforeLongWords_english() = runTest {
         repeat(5) {
             val words = WordPool.getWordsForStar(1, "en")
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 3-letter", firstHalf.all { it.length == 3 })
-            assertTrue("Last 10 words should all be 4-letter", secondHalf.all { it.length == 4 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 4-letter", firstHalf.all { it.length == 4 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 5-letter", secondHalf.all { it.length == 5 })
         }
     }
 
@@ -235,11 +235,11 @@ class WordPoolTest {
     fun getWordsForStar_star2_shortWordsBeforeLongWords_german() = runTest {
         repeat(5) {
             val words = WordPool.getWordsForStar(2, "de")
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 4-letter", firstHalf.all { it.length == 4 })
-            assertTrue("Last 10 words should all be 5-letter", secondHalf.all { it.length == 5 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 5-letter", firstHalf.all { it.length == 5 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 6-letter", secondHalf.all { it.length == 6 })
         }
     }
 
@@ -247,11 +247,11 @@ class WordPoolTest {
     fun getWordsForStar_star3_shortWordsBeforeLongWords_german() = runTest {
         repeat(5) {
             val words = WordPool.getWordsForStar(3, "de")
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 5-letter", firstHalf.all { it.length == 5 })
-            assertTrue("Last 10 words should all be 6-letter", secondHalf.all { it.length == 6 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 6-letter", firstHalf.all { it.length == 6 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 7-letter", secondHalf.all { it.length == 7 })
         }
     }
 
@@ -314,9 +314,9 @@ class WordPoolTest {
         val star2Avg = star2Words.map { it.length }.average()
         val star3Avg = star3Words.map { it.length }.average()
 
-        // Star 1: 3+4 letter words, avg = 3.5
-        // Star 2: 4+5 letter words, avg = 4.5
-        // Star 3: 5+6 letter words, avg = 5.5
+        // Star 1: 4+5 letter words, avg = 4.5
+        // Star 2: 5+6 letter words, avg = 5.5
+        // Star 3: 6+7 letter words, avg = 6.5
         assertTrue("Star 2 should have longer average word length than Star 1", star2Avg > star1Avg)
         assertTrue("Star 3 should have longer average word length than Star 2", star3Avg > star2Avg)
     }
@@ -339,11 +339,11 @@ class WordPoolTest {
     fun getWordsForStar_star2_shortWordsBeforeLongWords_english() = runTest {
         repeat(5) {
             val words = WordPool.getWordsForStar(2, "en")
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 4-letter", firstHalf.all { it.length == 4 })
-            assertTrue("Last 10 words should all be 5-letter", secondHalf.all { it.length == 5 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 5-letter", firstHalf.all { it.length == 5 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 6-letter", secondHalf.all { it.length == 6 })
         }
     }
 
@@ -351,11 +351,11 @@ class WordPoolTest {
     fun getWordsForStar_star3_shortWordsBeforeLongWords_english() = runTest {
         repeat(5) {
             val words = WordPool.getWordsForStar(3, "en")
-            val firstHalf = words.take(10)
-            val secondHalf = words.drop(10)
+            val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
-            assertTrue("First 10 words should all be 5-letter", firstHalf.all { it.length == 5 })
-            assertTrue("Last 10 words should all be 6-letter", secondHalf.all { it.length == 6 })
+            assertTrue("First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 6-letter", firstHalf.all { it.length == 6 })
+            assertTrue("Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} words should all be 7-letter", secondHalf.all { it.length == 7 })
         }
     }
 
@@ -364,26 +364,26 @@ class WordPoolTest {
         // AC6: Within a session, shorter words are presented before longer words
         // Verify this behavior holds across multiple calls for each star/language combo
         val configurations = listOf(
-            Triple(1, "de", Pair(3, 4)),
-            Triple(1, "en", Pair(3, 4)),
-            Triple(2, "de", Pair(4, 5)),
-            Triple(2, "en", Pair(4, 5)),
-            Triple(3, "de", Pair(5, 6)),
-            Triple(3, "en", Pair(5, 6))
+            Triple(1, "de", Pair(4, 5)),
+            Triple(1, "en", Pair(4, 5)),
+            Triple(2, "de", Pair(5, 6)),
+            Triple(2, "en", Pair(5, 6)),
+            Triple(3, "de", Pair(6, 7)),
+            Triple(3, "en", Pair(6, 7))
         )
 
         configurations.forEach { (star, lang, expectedLengths) ->
             repeat(3) {
                 val words = WordPool.getWordsForStar(star, lang)
-                val firstHalf = words.take(10)
-                val secondHalf = words.drop(10)
+                val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+                val secondHalf = words.drop(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
 
                 assertTrue(
-                    "Star $star $lang: First 10 should be ${expectedLengths.first}-letter",
+                    "Star $star $lang: First ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} should be ${expectedLengths.first}-letter",
                     firstHalf.all { it.length == expectedLengths.first }
                 )
                 assertTrue(
-                    "Star $star $lang: Last 10 should be ${expectedLengths.second}-letter",
+                    "Star $star $lang: Last ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} should be ${expectedLengths.second}-letter",
                     secondHalf.all { it.length == expectedLengths.second }
                 )
             }
@@ -404,6 +404,6 @@ class WordPoolTest {
         // Simply accessing WordPool triggers the init block which calls validateWordPool
         // If the data is invalid, this would throw IllegalStateException
         val words = WordPool.getWordsForStar(1, "en")
-        assertEquals(20, words.size)
+        assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 }
