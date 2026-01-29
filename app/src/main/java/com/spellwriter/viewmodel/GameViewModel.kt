@@ -94,6 +94,10 @@ class GameViewModel(
     private val _celebrationStarLevel = MutableStateFlow(0)
     val celebrationStarLevel: StateFlow<Int> = _celebrationStarLevel.asStateFlow()
 
+    // Navigation state for auto-progression
+    private val _shouldNavigateHome = MutableStateFlow(false)
+    val shouldNavigateHome: StateFlow<Boolean> = _shouldNavigateHome.asStateFlow()
+
     // Exit dialog and session state management
     private val _showExitDialog = MutableStateFlow(false)
     val showExitDialog: StateFlow<Boolean> = _showExitDialog.asStateFlow()
@@ -495,7 +499,8 @@ class GameViewModel(
     fun onCelebrationComplete() {
         _showCelebration.value = false
         _celebrationStarLevel.value = 0
-        Log.d(TAG, "Celebration complete - returned to normal state")
+        _shouldNavigateHome.value = true  // Signal GameScreen to navigate home
+        Log.d(TAG, "Celebration complete - signaling navigation to home")
     }
 
     /**

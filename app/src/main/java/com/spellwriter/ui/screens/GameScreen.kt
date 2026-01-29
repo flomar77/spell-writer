@@ -95,11 +95,13 @@ fun GameScreen(
     // Story 3.1: Exit dialog and session state (AC2, AC3, AC4, AC5)
     val showExitDialog by viewModel.showExitDialog.collectAsState()
     val sessionState by viewModel.sessionState.collectAsState()
+    val shouldNavigateHome by viewModel.shouldNavigateHome.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Story 2.1, 2.3: Trigger star completion callback when session completes (AC6)
-    LaunchedEffect(gameState.sessionComplete) {
-        if (gameState.sessionComplete) {
+    // Auto-progression: Navigate home only when continueToNextStar() determines it's appropriate
+    // (after star 3 complete, or during replay session)
+    LaunchedEffect(shouldNavigateHome) {
+        if (shouldNavigateHome) {
             onStarComplete?.invoke(starNumber)
         }
     }
