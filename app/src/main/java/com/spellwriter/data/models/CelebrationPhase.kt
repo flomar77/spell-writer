@@ -19,6 +19,9 @@ enum class CelebrationPhase {
     /** Star pop lock-in animation (800ms) - AC4 */
     STAR_POP,
 
+    /** GIF reward overlay (user-dismissed) - displays random cat GIF */
+    GIF_REWARD,
+
     /** Celebration complete, ready to return to normal state - AC7 */
     COMPLETE
 }

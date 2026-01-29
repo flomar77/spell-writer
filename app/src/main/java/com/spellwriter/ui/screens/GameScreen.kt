@@ -280,11 +280,11 @@ fun GameScreen(
             }
         }
 
-        // Story 2.4: Celebration overlay (AC1, AC2, AC3, AC4, AC6, AC7)
+        // GIF Reward Celebration overlay
         CelebrationSequence(
             showCelebration = showCelebration,
             starLevel = celebrationStarLevel,
-            onCelebrationComplete = { viewModel.onCelebrationComplete() }
+            onContinueToNextStar = { viewModel.onCelebrationComplete() } // TODO: Replace with continueToNextStar() in Phase 5
         )
 
         // Story 3.1: Exit confirmation dialog (AC2, AC3, AC4, AC5)

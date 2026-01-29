@@ -1,5 +1,6 @@
 package com.spellwriter.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,51 +12,54 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import com.spellwriter.data.models.CelebrationPhase
-import kotlinx.coroutines.delay
+import com.spellwriter.utils.GifSelector
 
 /**
- * Story 2.4: Celebration sequence orchestrator.
- * Coordinates the sequential celebration animations:
- * 1. Stars explosion (500ms)
- * 2. Dragon fly-through (2000ms)
- * 3. Star pop (800ms)
+ * Celebration sequence orchestrator with GIF reward overlay.
  *
- * AC6: Smooth animation flow with seamless transitions
- * AC7: Post-celebration state management
+ * Displays a random GIF reward from assets after star completion.
+ * Replaces previous animation sequence (explosion/dragon/star) with
+ * immediate GIF display for faster, more direct feedback.
+ *
+ * Flow:
+ * 1. Star earned → GIF selected randomly from assets/gifs/
+ * 2. GIF displayed in fullscreen overlay with Continue button
+ * 3. User taps Continue → progression to next star or home
  *
  * @param showCelebration Whether to show the celebration sequence
  * @param starLevel The star level just earned (1, 2, or 3)
- * @param onCelebrationComplete Callback when the entire sequence finishes
+ * @param onContinueToNextStar Callback when user clicks Continue (triggers auto-progression)
  * @param modifier Modifier for the celebration overlay
  */
 @Composable
 fun CelebrationSequence(
     showCelebration: Boolean,
     starLevel: Int,
-    onCelebrationComplete: () -> Unit,
+    onContinueToNextStar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var celebrationPhase by remember { mutableStateOf(CelebrationPhase.NONE) }
+    var selectedGifPath by remember { mutableStateOf<String?>(null) }
 
-    // Orchestrate the celebration sequence with precise timing
+    // Orchestrate the celebration sequence - skip animations, go straight to GIF
     LaunchedEffect(showCelebration) {
         if (showCelebration && celebrationPhase == CelebrationPhase.NONE) {
-            // Phase 1: Stars explosion (500ms) - AC1
-            celebrationPhase = CelebrationPhase.EXPLOSION
-            delay(500) // FR5.4: Exactly 500ms
+            // Select random GIF from assets
+            selectedGifPath = GifSelector.selectRandomGif(context)
 
-            // Phase 2: Dragon fly-through (2000ms) - AC2, AC3
-            celebrationPhase = CelebrationPhase.DRAGON
-            delay(2000) // FR5.5: Exactly 2000ms
-
-            // Phase 3: Star pop (800ms) - AC4
-            celebrationPhase = CelebrationPhase.STAR_POP
-            delay(800) // FR5.7: Exactly 800ms
-
-            // Phase 4: Complete - AC7
-            celebrationPhase = CelebrationPhase.COMPLETE
-            onCelebrationComplete()
+            if (selectedGifPath != null) {
+                // Show GIF reward overlay
+                celebrationPhase = CelebrationPhase.GIF_REWARD
+                // User controls progression by tapping Continue button
+            } else {
+                // No GIF available - skip overlay and proceed
+                Log.w("CelebrationSequence", "No GIF found for star $starLevel - skipping reward overlay")
+                celebrationPhase = CelebrationPhase.COMPLETE
+                onContinueToNextStar()
+            }
         }
     }
 
@@ -63,24 +67,27 @@ fun CelebrationSequence(
     LaunchedEffect(showCelebration) {
         if (!showCelebration) {
             celebrationPhase = CelebrationPhase.NONE
+            selectedGifPath = null
         }
     }
 
     // Render current celebration phase
-    // Semi-transparent overlay to intercept touches during celebration
     if (showCelebration) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f)) // Dim background
-        ) {
-            when (celebrationPhase) {
-                CelebrationPhase.EXPLOSION -> StarsExplosionAnimation()
-                CelebrationPhase.DRAGON -> DragonAnimation(starLevel = starLevel)
-                CelebrationPhase.STAR_POP -> StarPopAnimation(starLevel = starLevel)
-                CelebrationPhase.NONE, CelebrationPhase.COMPLETE -> {
-                    // No animation rendered
+        when (celebrationPhase) {
+            CelebrationPhase.GIF_REWARD -> {
+                selectedGifPath?.let { path ->
+                    GifRewardOverlay(
+                        gifAssetPath = path,
+                        onContinue = {
+                            celebrationPhase = CelebrationPhase.COMPLETE
+                            onContinueToNextStar()
+                        }
+                    )
                 }
+            }
+            CelebrationPhase.NONE, CelebrationPhase.COMPLETE,
+            CelebrationPhase.EXPLOSION, CelebrationPhase.DRAGON, CelebrationPhase.STAR_POP -> {
+                // No animation rendered (old phases kept for compatibility but not used)
             }
         }
     }

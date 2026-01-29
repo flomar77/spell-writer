@@ -535,7 +535,7 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
 
 ## Phase 4: CelebrationSequence Integration (TDD)
 
-- [ ] 125. [TEST] Write tests for CelebrationSequence GIF integration
+- [x] 125. [TEST] Write tests for CelebrationSequence GIF integration
   - Test `selectedGifPath` state starts as null
   - Test GifSelector called when `showCelebration = true`
   - Test GIF_REWARD phase shown when GIF path is not null
@@ -547,7 +547,7 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
   - Test fallback: warning logged when no GIF available
   - Test state resets when `showCelebration = false`
 
-- [ ] 126. [IMPL] Modify CelebrationSequence.kt to integrate GIF overlay
+- [x] 126. [IMPL] Modify CelebrationSequence.kt to integrate GIF overlay
   - Add import for GifSelector and GifRewardOverlay
   - Add state: `var selectedGifPath by remember { mutableStateOf<String?>(null) }`
   - Change callback parameter from `onCelebrationComplete` to `onContinueToNextStar`
@@ -562,12 +562,12 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
   - Reset `selectedGifPath` when `showCelebration = false`
   - Update KDoc comments
 
-- [ ] 127. [CHECK] Run CelebrationSequence tests
+- [x] 127. [CHECK] Run CelebrationSequence tests
   - Run `./gradlew test --tests CelebrationSequenceTest`
   - Verify all integration tests pass
   - Verify fallback logic works (no crash with missing GIFs)
 
-- [ ] 128. [COMMIT] Commit CelebrationSequence changes
+- [x] 128. [COMMIT] Commit CelebrationSequence changes
   - Review changes to celebration flow
   - Commit: `refactor: replace celebration animations with GIF reward overlay in CelebrationSequence`
 
