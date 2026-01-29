@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -495,6 +496,88 @@ class GameViewModel(
         _showCelebration.value = false
         _celebrationStarLevel.value = 0
         Log.d(TAG, "Celebration complete - returned to normal state")
+    }
+
+    /**
+     * Continue to next star session after GIF reward dismissed.
+     *
+     * Auto-progression flow:
+     * - Star 1 complete → Start star 2 session automatically
+     * - Star 2 complete → Start star 3 session automatically
+     * - Star 3 complete → Return to home screen (no next star)
+     *
+     * For replay sessions: Always returns to home (no auto-progression)
+     *
+     * This function:
+     * 1. Checks if replay session (if yes, return to home)
+     * 2. Fetches current progress to determine next star
+     * 3. Clears current session state
+     * 4. If next star available (<=3): Loads new word pool for next star
+     * 5. If no next star (>3): Returns to home screen
+     */
+    fun continueToNextStar() {
+        viewModelScope.launch {
+            // Replay sessions don't auto-progress - return to home immediately
+            if (isReplaySession) {
+                Log.d(TAG, "Replay session - returning to home without progression")
+                onCelebrationComplete()
+                return@launch
+            }
+
+            // Fetch current progress to determine next star
+            val currentProgress = try {
+                progressRepository?.progressFlow?.first() ?: initialProgress
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching progress for auto-progression", e)
+                initialProgress
+            }
+
+            // Determine next star number
+            val nextStar = currentProgress.getCurrentStar()
+            Log.d(TAG, "Current progress: $currentProgress, next star: $nextStar")
+
+            // Clear celebration state
+            _showCelebration.value = false
+            _celebrationStarLevel.value = 0
+
+            // Check if next star is available
+            if (nextStar <= 3) {
+                // Load word pool for next star and continue playing
+                Log.d(TAG, "Auto-progressing to star $nextStar")
+                loadWordsForGivenStar(nextStar)
+            } else {
+                // No next star available (completed star 3) - return to home
+                Log.d(TAG, "All stars completed - returning to home")
+                onCelebrationComplete()
+            }
+        }
+    }
+
+    /**
+     * Load words for a specific star level (used for auto-progression).
+     * Similar to loadWordsForStar() but accepts star parameter.
+     */
+    private suspend fun loadWordsForGivenStar(star: Int) {
+        val words = WordRepository.getWordsForStar(star, _currentLanguage.value)
+        wordPerformanceTracker.reset()
+
+        val firstWord = words.firstOrNull() ?: ""
+        wordPerformanceTracker.startWordTracking(firstWord)
+
+        _gameState.update {
+            it.copy(
+                wordPool = words,
+                currentWord = firstWord.uppercase(),
+                wordsCompleted = 0,
+                typedLetters = "",
+                sessionComplete = false,
+                remainingWords = words.drop(1),
+                failedWords = emptyList()
+            )
+        }
+
+        _ghostExpression.value = GhostExpression.NEUTRAL
+        Log.d(TAG, "Auto-progression: Loaded ${words.size} words for star $star in ${_currentLanguage.value} mode")
     }
 
     /**
