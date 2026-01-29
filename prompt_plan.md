@@ -430,26 +430,26 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
   - Verify GIFs are 320-480px width
   - Document GIF sources used
 
-- [ ] 113. [IMPL] Add Coil dependencies to build.gradle.kts
+- [x] 113. [IMPL] Add Coil dependencies to build.gradle.kts
   - Add `implementation("io.coil-kt:coil-compose:2.7.0")`
   - Add `implementation("io.coil-kt:coil-gif:2.7.0")`
   - Sync Gradle
   - Verify no dependency conflicts
 
-- [ ] 114. [IMPL] Add string resources for Continue button
+- [x] 114. [IMPL] Add string resources for Continue button
   - Add to `values/strings.xml`: `<string name="celebration_continue">Continue</string>`
   - Add to `values/strings.xml`: `<string name="celebration_gif_description">Reward animation</string>`
   - Add to `values-en/strings.xml`: Same as above
   - Add to `values-de/strings.xml`: `<string name="celebration_continue">Weiter</string>`
   - Add to `values-de/strings.xml`: `<string name="celebration_gif_description">Belohnungsanimation</string>`
 
-- [ ] 115. [CHECK] Build verification after setup
+- [x] 115. [CHECK] Build verification after setup
   - Run `./gradlew compileDebugKotlin`
   - Verify Coil dependencies downloaded
   - Verify string resources compile
   - Verify no build errors
 
-- [ ] 116. [COMMIT] Commit project setup
+- [x] 116. [COMMIT] Commit project setup
   - Review all setup changes
   - Commit: `feat: add Coil dependencies and string resources for GIF reward overlay`
 
@@ -457,7 +457,7 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
 
 ## Phase 2: GIF Selection Utility (TDD)
 
-- [ ] 117. [TEST] Write tests for GifSelector utility
+- [x] 117. [TEST] Write tests for GifSelector utility
   - Test `selectRandomGif()` returns GIF path when folder contains files
   - Test returns null when folder is empty
   - Test returns null when folder doesn't exist
@@ -468,7 +468,7 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
   - Test path format is "gifs/filename.gif" (correct relative path)
   - Mock AssetManager for controlled testing
 
-- [ ] 118. [IMPL] Create GifSelector.kt utility
+- [x] 118. [IMPL] Create GifSelector.kt utility
   - Create `/app/src/main/java/com/spellwriter/utils/GifSelector.kt`
   - Implement `selectRandomGif(context: Context): String?` function
   - Use `context.assets.list("gifs")` to list files
@@ -478,12 +478,12 @@ Add GIF reward overlay after each star completion. GIF is randomly selected from
   - Catch IOException, log warning, return null
   - Add KDoc comments explaining function purpose
 
-- [ ] 119. [CHECK] Run GifSelector tests
+- [x] 119. [CHECK] Run GifSelector tests
   - Run `./gradlew test --tests GifSelectorTest`
   - Verify all tests pass
   - Check test coverage (should be 100% for this utility)
 
-- [ ] 120. [COMMIT] Commit GifSelector utility
+- [x] 120. [COMMIT] Commit GifSelector utility
   - Review implementation and tests
   - Commit: `feat: add GifSelector utility for random GIF selection from assets`
 
