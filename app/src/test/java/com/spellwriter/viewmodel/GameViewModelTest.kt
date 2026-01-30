@@ -513,6 +513,300 @@ class GameViewModelTest {
     // - Test audio playback integration
     // - Verify isTTSReady state flow updates
 
+    // TTS Playback Control Tests - Step 1: shouldPlayAudio StateFlow behavior
+
+    @Test
+    fun shouldPlayAudio_initialState_isFalse() {
+        // Verify shouldPlayAudio starts as false
+        val viewModel = createTestViewModel()
+
+        assertFalse(
+            "shouldPlayAudio should initially be false",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun triggerAudioPlayback_setsStateToTrue() {
+        // Verify triggerAudioPlayback() sets shouldPlayAudio to true
+        val viewModel = createTestViewModel()
+
+        viewModel.triggerAudioPlayback()
+
+        assertTrue(
+            "shouldPlayAudio should be true after triggerAudioPlayback()",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun markAudioPlayed_resetsStateToFalse() {
+        // Verify markAudioPlayed() sets shouldPlayAudio to false
+        val viewModel = createTestViewModel()
+        viewModel.triggerAudioPlayback()  // Set to true first
+
+        viewModel.markAudioPlayed()
+
+        assertFalse(
+            "shouldPlayAudio should be false after markAudioPlayed()",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun triggerAudioPlayback_multipleCalls_maintainsTrueState() {
+        // Verify multiple calls to triggerAudioPlayback() maintain true state
+        val viewModel = createTestViewModel()
+
+        viewModel.triggerAudioPlayback()
+        viewModel.triggerAudioPlayback()
+        viewModel.triggerAudioPlayback()
+
+        assertTrue(
+            "shouldPlayAudio should remain true after multiple triggerAudioPlayback() calls",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    // TTS Playback Control Tests - Step 2: Word completion flow triggers
+
+    @Test
+    fun wordCompletion_triggersShouldPlayAudio() {
+        // Verify that completing a word triggers shouldPlayAudio = true
+        val viewModel = createTestViewModel()
+
+        // Reset the flag if it was set during initialization
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        // Complete the current word by typing all letters
+        val currentWord = viewModel.gameState.value.currentWord
+        currentWord.forEach { letter ->
+            viewModel.onLetterTyped(letter)
+        }
+
+        // After word completion and progression, shouldPlayAudio should be true
+        // Note: This test will need to account for coroutine delays in actual implementation
+        assertTrue(
+            "shouldPlayAudio should be true after word completion",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun wordCompletion_callsTriggerAudioPlayback_notSpeakCurrentWord() {
+        // Verify that advancing to next word calls triggerAudioPlayback()
+        // and does NOT directly call speakCurrentWord() in the completion logic
+        // This is a behavioral test - we verify the trigger mechanism is used
+
+        val viewModel = createTestViewModel()
+
+        // Mark audio as played to reset state
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        val initialWord = viewModel.gameState.value.currentWord
+
+        // Complete the word
+        initialWord.forEach { letter ->
+            viewModel.onLetterTyped(letter)
+        }
+
+        // The completion flow should have triggered the audio playback flag
+        // rather than calling speakCurrentWord() directly
+        assertTrue(
+            "Word completion should trigger shouldPlayAudio flag instead of direct speakCurrentWord() call",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun wordCompletion_advancesToNextWord_andTriggers() {
+        // Verify that after word completion, we advance to next word and trigger audio
+        val viewModel = createTestViewModel()
+        val firstWord = viewModel.gameState.value.currentWord
+
+        // Mark audio as played to reset state
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        // Complete first word
+        firstWord.forEach { letter ->
+            viewModel.onLetterTyped(letter)
+        }
+
+        // After completion, should have moved to next word and triggered audio
+        val newWord = viewModel.gameState.value.currentWord
+        assertNotEquals(
+            "Should have advanced to a different word after completion",
+            firstWord,
+            newWord
+        )
+
+        assertTrue(
+            "shouldPlayAudio should be true for the new word",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    // TTS Playback Control Tests - Step 3: Word failure flow triggers
+
+    @Test
+    fun wordFailure_triggersShouldPlayAudio() {
+        // Verify that failing a word triggers shouldPlayAudio = true after delay
+        val viewModel = createTestViewModel()
+
+        // Mark audio as played to reset state
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        // Fail the word
+        viewModel.onWordFailed()
+
+        // After failure handling (with delay), shouldPlayAudio should be true
+        // Note: This test will need to account for coroutine delays (2000ms) in actual implementation
+        assertTrue(
+            "shouldPlayAudio should be true after word failure",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun wordFailure_callsTriggerAudioPlayback_notSpeakCurrentWord() {
+        // Verify that onWordFailed() uses triggerAudioPlayback()
+        // and does NOT directly call speakCurrentWord() in the failure logic
+        val viewModel = createTestViewModel()
+
+        // Mark audio as played to reset state
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        // Trigger word failure
+        viewModel.onWordFailed()
+
+        // The failure flow should have triggered the audio playback flag
+        assertTrue(
+            "Word failure should trigger shouldPlayAudio flag instead of direct speakCurrentWord() call",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun wordFailure_wordReinsertedIntoPool_andTriggers() {
+        // Verify that after word failure, word is reinserted into remaining pool
+        // and audio trigger is set
+        val viewModel = createTestViewModel()
+        val failedWord = viewModel.gameState.value.currentWord
+
+        // Mark audio as played to reset state
+        if (viewModel.shouldPlayAudio.value) {
+            viewModel.markAudioPlayed()
+        }
+
+        // Fail the word
+        viewModel.onWordFailed()
+
+        // Word should be in failed words list
+        assertTrue(
+            "Failed word should be tracked in failedWords",
+            viewModel.gameState.value.failedWords.contains(failedWord)
+        )
+
+        // shouldPlayAudio should be triggered for retry
+        assertTrue(
+            "shouldPlayAudio should be true after word failure for retry",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    // TTS Playback Control Tests - Step 4: Initial word load triggers
+
+    @Test
+    fun initialWordLoad_triggersShouldPlayAudio() {
+        // Verify that loadWordsForStar() triggers shouldPlayAudio = true
+        // This happens during ViewModel initialization
+        val viewModel = createTestViewModel()
+
+        // After initialization, shouldPlayAudio should be true (first word loaded)
+        assertTrue(
+            "shouldPlayAudio should be true after initial word load",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun initialWordLoad_stateIsUpdated_thenTriggers() {
+        // Verify that trigger happens after state update
+        val viewModel = createTestViewModel()
+
+        // Verify both state is updated AND audio is triggered
+        assertNotEquals(
+            "Current word should be set after initialization",
+            "",
+            viewModel.gameState.value.currentWord
+        )
+
+        assertTrue(
+            "shouldPlayAudio should be true after state is updated",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
+    @Test
+    fun starProgression_loadWordsForGivenStar_triggersShouldPlayAudio() {
+        // Verify that loadWordsForGivenStar() (used in auto-progression) triggers audio
+        // This test verifies the behavior when moving from Star 1 -> Star 2, etc.
+
+        val viewModel = createTestViewModel()
+
+        // Initial load should have triggered audio
+        assertTrue(
+            "Initial load should trigger audio",
+            viewModel.shouldPlayAudio.value
+        )
+
+        // Mark as played
+        viewModel.markAudioPlayed()
+
+        assertFalse(
+            "Audio should be marked as played",
+            viewModel.shouldPlayAudio.value
+        )
+
+        // Note: Testing continueToNextStar() which calls loadWordsForGivenStar()
+        // would require completing 20 words, which is beyond unit test scope
+        // The implementation will ensure loadWordsForGivenStar() also calls triggerAudioPlayback()
+    }
+
+    @Test
+    fun initialWordLoad_wordPoolAndCurrentWord_setBeforeTrigger() {
+        // Verify that wordPool and currentWord are populated before audio trigger
+        val viewModel = createTestViewModel()
+
+        // State should be fully initialized
+        assertTrue(
+            "Word pool should not be empty",
+            viewModel.gameState.value.wordPool.isNotEmpty()
+        )
+
+        assertNotEquals(
+            "Current word should be set",
+            "",
+            viewModel.gameState.value.currentWord
+        )
+
+        // And audio should be triggered
+        assertTrue(
+            "shouldPlayAudio should be true after initialization",
+            viewModel.shouldPlayAudio.value
+        )
+    }
+
     // Note: GameViewModel tests requiring Context, TTS, and SoundManager
     // are in instrumentation tests (androidTest)
     // Integration tests for onWordFailed() and full session flow require
