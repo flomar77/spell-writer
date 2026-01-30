@@ -163,6 +163,8 @@ class GameViewModel(
         }
 
         _ghostExpression.value = GhostExpression.NEUTRAL
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() on initial load")
+        triggerAudioPlayback()
         Log.d(TAG, "Loaded ${words.size} words for star $starNumber in ${_currentLanguage.value} mode")
     }
 
@@ -601,6 +603,8 @@ class GameViewModel(
         }
 
         _ghostExpression.value = GhostExpression.NEUTRAL
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() on star progression")
+        triggerAudioPlayback()
         Log.d(TAG, "Auto-progression: Loaded ${words.size} words for star $star in ${_currentLanguage.value} mode")
     }
 
