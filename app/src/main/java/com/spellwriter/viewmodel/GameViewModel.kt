@@ -75,7 +75,20 @@ class GameViewModel(
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
-    // Explicit trigger for audio playback (set by ViewModel, consumed by UI)
+    /**
+     * Explicit trigger for audio playback (set by ViewModel, consumed by UI).
+     *
+     * This StateFlow provides centralized control over when TTS audio should play,
+     * eliminating race conditions from dual-trigger architecture.
+     *
+     * Flow:
+     * 1. ViewModel calls triggerAudioPlayback() to set this to true
+     * 2. UI LaunchedEffect observes this and plays audio when true
+     * 3. UI calls markAudioPlayed() to reset this to false
+     *
+     * This prevents multiple playback triggers from different sources (word completion,
+     * word failure, initial load, star progression) from racing with UI auto-play logic.
+     */
     private val _shouldPlayAudio = MutableStateFlow(false)
     val shouldPlayAudio: StateFlow<Boolean> = _shouldPlayAudio.asStateFlow()
 
@@ -164,8 +177,18 @@ class GameViewModel(
 
     /**
      * Trigger audio playback for current word.
-     * Sets flag that UI will observe and act upon.
-     * This provides centralized control over when audio should play.
+     *
+     * Sets [shouldPlayAudio] to true, which the UI observes via LaunchedEffect.
+     * This provides centralized control over when audio should play, eliminating
+     * race conditions from multiple trigger sources.
+     *
+     * Called by:
+     * - Word completion flow (after 300ms delay)
+     * - Word failure flow (after 2000ms delay + ghost death animation)
+     * - Initial word load (during ViewModel initialization)
+     * - Star progression (when auto-advancing to next star)
+     *
+     * The UI is responsible for calling [markAudioPlayed] after playback completes.
      */
     fun triggerAudioPlayback() {
         _shouldPlayAudio.value = true
@@ -173,8 +196,11 @@ class GameViewModel(
     }
 
     /**
-     * Mark audio playback as consumed (UI should call this after playing).
-     * Resets the trigger flag to prevent duplicate playback.
+     * Mark audio playback as consumed.
+     *
+     * Resets [shouldPlayAudio] to false to prevent duplicate playback.
+     * UI must call this immediately after calling [speakCurrentWord] in response
+     * to a trigger. Failure to call this will cause the trigger to remain active.
      */
     fun markAudioPlayed() {
         _shouldPlayAudio.value = false
