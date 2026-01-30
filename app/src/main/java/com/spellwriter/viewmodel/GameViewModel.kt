@@ -75,6 +75,10 @@ class GameViewModel(
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
+    // Explicit trigger for audio playback (set by ViewModel, consumed by UI)
+    private val _shouldPlayAudio = MutableStateFlow(false)
+    val shouldPlayAudio: StateFlow<Boolean> = _shouldPlayAudio.asStateFlow()
+
     // Job for expression auto-reset
     private var expressionResetJob: Job? = null
 
@@ -163,17 +167,29 @@ class GameViewModel(
     }
 
     /**
+     * Trigger audio playback for current word.
+     * Sets flag that UI will observe and act upon.
+     * This provides centralized control over when audio should play.
+     */
+    fun triggerAudioPlayback() {
+        _shouldPlayAudio.value = true
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback()")
+    }
+
+    /**
+     * Mark audio playback as consumed (UI should call this after playing).
+     * Resets the trigger flag to prevent duplicate playback.
+     */
+    fun markAudioPlayed() {
+        _shouldPlayAudio.value = false
+    }
+
+    /**
      * Speak the current word using TTS.
+     * Called directly by UI for manual Play/Replay button clicks.
      */
     fun speakCurrentWord() {
         val word = _gameState.value.currentWord
-
-        // Set flag to prevent duplicate auto-play from LaunchedEffect
-        skipNextAutoPlay = true
-        viewModelScope.launch {
-            delay(200L) // Reset flag after 200ms
-            skipNextAutoPlay = false
-        }
 
         audioManager?.speakWord(
             word = word,
@@ -188,7 +204,7 @@ class GameViewModel(
             }
         )
 
-        Log.d(TAG, "Word '${_gameState.value.currentWord}' spoken.")
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - speakCurrentWord() - Word '${_gameState.value.currentWord}' spoken.")
     }
 
     /**
