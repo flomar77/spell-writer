@@ -59,6 +59,7 @@ class GameViewModel(
     private val isReplaySession: Boolean = false,
     private val progressRepository: ProgressRepository? = null,
     private val sessionRepository: SessionRepository? = null,
+    private val wordsRepository: com.spellwriter.data.repository.WordsRepository? = null,
     private val initialProgress: Progress = Progress(),
     private val audioManager: AudioManager? = null
 ) : ViewModel() {
@@ -637,14 +638,18 @@ class GameViewModel(
     }
 
     /**
-     * Confirm exit and save session.
+     * Confirm exit and handle state persistence.
+     * Behavior depends on PERSIST_ALL_STATE constant.
      */
     suspend fun confirmExit() {
-        Log.d(TAG, "Exit confirmed - saving session and returning to home")
-        if (GameConstants.SAVE_SESSION_IN_CACHE) {
+        Log.d(TAG, "Exit confirmed - PERSIST_ALL_STATE=${GameConstants.PERSIST_ALL_STATE}")
+
+        if (GameConstants.PERSIST_ALL_STATE) {
             saveSessionProgress()
+            Log.d(TAG, "Session saved for resume")
         } else {
-            resetSession()
+            clearAllState()
+            Log.d(TAG, "All state cleared")
         }
 
         _sessionState.value = SessionState.EXITED
@@ -682,6 +687,25 @@ class GameViewModel(
             Log.d(TAG, "Session saved - ${savedSession.wordsCompleted} words completed, ${savedSession.remainingWords.size} remaining")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save session", e)
+        }
+    }
+
+    /**
+     * Clear all application state (session, progress, word cache).
+     * Called when PERSIST_ALL_STATE = false and user exits to home.
+     */
+    private suspend fun clearAllState() {
+        try {
+            sessionRepository?.clearSession()
+            Log.d(TAG, "Session cleared")
+
+            progressRepository?.clearAllProgress()
+            Log.d(TAG, "Progress cleared")
+
+            wordsRepository?.clearAllCache()
+            Log.d(TAG, "Word cache cleared")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear state", e)
         }
     }
 

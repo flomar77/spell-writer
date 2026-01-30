@@ -72,12 +72,19 @@ fun GameScreen(
     // Story 1.4, 2.3: GameViewModel integration with TTS and gameplay logic + persistence
     // AudioManager Injection: Pass audioManager to GameViewModel and include in remember key
     val context = LocalContext.current
+
+    // Create repositories
+    val sessionRepository = remember { com.spellwriter.data.repository.SessionRepository(context) }
+    val wordsRepository = remember { com.spellwriter.data.repository.WordsRepository(context) }
+
     val viewModel = remember(starNumber, isReplaySession, audioManager) {
         GameViewModel(
             context = context,
             starNumber = starNumber,
             isReplaySession = isReplaySession,
             progressRepository = progressRepository,
+            sessionRepository = sessionRepository,
+            wordsRepository = wordsRepository,
             initialProgress = currentProgress,
             audioManager = audioManager
         )

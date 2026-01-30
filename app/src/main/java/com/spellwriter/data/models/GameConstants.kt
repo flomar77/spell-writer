@@ -13,5 +13,20 @@ object GameConstants {
     const val WORDS_PER_DIFFICULTY_GROUP = 2
     const val WORDS_PER_SESSION = WORDS_PER_DIFFICULTY_GROUP * 2  // = 20
 
-    const val SAVE_SESSION_IN_CACHE = false
+    /**
+     * Controls all application state persistence.
+     *
+     * When true (production mode):
+     * - Session persists on exit (mid-session resume)
+     * - Progress persists (stars earned, world selection)
+     * - Word cache persists (API words cached 30 days)
+     *
+     * When false (testing/demo mode):
+     * - Exit clears session (no resume)
+     * - Exit clears progress (stars reset to 0)
+     * - Exit clears word cache (fresh API fetch)
+     *
+     * Default: false (testing). Set true for production.
+     */
+    const val PERSIST_ALL_STATE = false
 }

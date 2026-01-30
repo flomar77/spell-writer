@@ -143,6 +143,26 @@ class WordsRepository(private val context: Context) {
     }
 
     /**
+     * Clear all cached words for all stars and languages.
+     * Removes 12 DataStore keys (6 word lists + 6 timestamps).
+     */
+    suspend fun clearAllCache() {
+        try {
+            context.dataStore.edit { prefs ->
+                for (star in 1..3) {
+                    for (lang in listOf("de", "en")) {
+                        prefs.remove(stringPreferencesKey("words_star${star}_${lang}"))
+                        prefs.remove(longPreferencesKey("words_star${star}_${lang}_timestamp"))
+                    }
+                }
+            }
+            Log.d(TAG, "All word cache cleared")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear word cache", e)
+        }
+    }
+
+    /**
      * Get word lengths for a star level.
      * FIXME This class actually doesnt need to know about Stars (single responsibility principle)
      */

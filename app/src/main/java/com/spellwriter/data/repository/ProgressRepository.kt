@@ -1,6 +1,7 @@
 package com.spellwriter.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -137,6 +138,21 @@ class ProgressRepository(private val context: Context) {
             preferences.remove(PreferencesKeys.LAST_SESSION_STAR)
             preferences.remove(PreferencesKeys.LAST_WORD_INDEX)
         }
+    }
+
+    /**
+     * Clear ALL progress data (stars, world, session state).
+     * Different from clearSessionState() which only clears session resume data.
+     */
+    suspend fun clearAllProgress() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.WIZARD_STARS)
+            preferences.remove(PreferencesKeys.PIRATE_STARS)
+            preferences.remove(PreferencesKeys.CURRENT_WORLD)
+            preferences.remove(PreferencesKeys.LAST_SESSION_STAR)
+            preferences.remove(PreferencesKeys.LAST_WORD_INDEX)
+        }
+        Log.d("ProgressRepository", "All progress cleared")
     }
 
     /**
