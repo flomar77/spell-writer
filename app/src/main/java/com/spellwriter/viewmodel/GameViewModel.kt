@@ -493,7 +493,8 @@ class GameViewModel(
         viewModelScope.launch {
             delay(2000L)
             _ghostExpression.value = GhostExpression.NEUTRAL
-            speakCurrentWord()
+            Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() after word failure")
+            triggerAudioPlayback()
         }
     }
 
