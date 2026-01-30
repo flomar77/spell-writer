@@ -607,8 +607,11 @@ class GameViewModel(
      */
     suspend fun confirmExit() {
         Log.d(TAG, "Exit confirmed - saving session and returning to home")
-
-        saveSessionProgress()
+        if (GameConstants.SAVE_SESSION_IN_CACHE) {
+            saveSessionProgress()
+        } else {
+            resetSession()
+        }
 
         _sessionState.value = SessionState.EXITED
         _showExitDialog.value = false

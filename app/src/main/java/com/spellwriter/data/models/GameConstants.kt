@@ -10,6 +10,8 @@ package com.spellwriter.data.models
  * WORDS_PER_SESSION: Total words to complete a star (derived as 2x difficulty groups).
  */
 object GameConstants {
-    const val WORDS_PER_DIFFICULTY_GROUP = 10
+    const val WORDS_PER_DIFFICULTY_GROUP = 2
     const val WORDS_PER_SESSION = WORDS_PER_DIFFICULTY_GROUP * 2  // = 20
+
+    const val SAVE_SESSION_IN_CACHE = false
 }
