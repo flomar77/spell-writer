@@ -99,6 +99,10 @@ fun GameScreen(
     val shouldNavigateHome by viewModel.shouldNavigateHome.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    // Debouncing state for Play/Replay buttons
+    var lastPlayClick by remember { mutableStateOf(0L) }
+    val minClickInterval = 500L  // 500ms debounce
+
     // Auto-progression: Navigate home only when continueToNextStar() determines it's appropriate
     // (after star 3 complete, or during replay session)
     LaunchedEffect(shouldNavigateHome) {
@@ -161,7 +165,16 @@ fun GameScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
+                        onClick = {
+                            val now = System.currentTimeMillis()
+                            if (now - lastPlayClick > minClickInterval) {
+                                lastPlayClick = now
+                                viewModel.speakCurrentWord()
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button clicked")
+                            } else {
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button click debounced")
+                            }
+                        },
                         modifier = Modifier.size(56.dp)
                     ) {
                         Icon(
@@ -172,7 +185,16 @@ fun GameScreen(
                     }
                     Spacer(modifier = Modifier.width(24.dp))
                     IconButton(
-                        onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
+                        onClick = {
+                            val now = System.currentTimeMillis()
+                            if (now - lastPlayClick > minClickInterval) {
+                                lastPlayClick = now
+                                viewModel.speakCurrentWord()
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button clicked")
+                            } else {
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button click debounced")
+                            }
+                        },
                         modifier = Modifier.size(56.dp)
                     ) {
                         Icon(
