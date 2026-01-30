@@ -441,7 +441,8 @@ class GameViewModel(
 
             if (nextWord != null) {
                 delay(300)
-                speakCurrentWord()
+                Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() after word completion")
+                triggerAudioPlayback()
             } else {
                 Log.w(TAG, "No remaining words but session not complete - checking session state")
             }
