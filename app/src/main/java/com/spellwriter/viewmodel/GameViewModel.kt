@@ -123,12 +123,6 @@ class GameViewModel(
      */
     private var consecutiveFailuresAtCurrentPosition = 0
 
-    /**
-     * Flag to prevent duplicate playback when user manually clicks play/replay.
-     * Set to true on manual playback, auto-resets after 200ms.
-     */
-    private var skipNextAutoPlay = false
-
     // Expose TTS ready state to UI for proper initialization timing
     // Returns false if audioManager is null (game runs without audio)
     val isTTSReady: StateFlow<Boolean> = audioManager?.isTTSReady
@@ -207,14 +201,6 @@ class GameViewModel(
         )
 
         Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - speakCurrentWord() - Word '${_gameState.value.currentWord}' spoken.")
-    }
-
-    /**
-     * Check if auto-play should be skipped (user just manually triggered playback).
-     * Internal visibility for testing.
-     */
-    internal fun shouldSkipAutoPlay(): Boolean {
-        return skipNextAutoPlay
     }
 
     /**

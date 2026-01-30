@@ -27,6 +27,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.ui.components.CelebrationSequence
@@ -114,18 +115,15 @@ fun GameScreen(
         }
     }
 
-    // Automatically speak the word when it changes and TTS is ready
-    // Wait for TTS initialization to avoid race condition on app start
-    // Skip if user just clicked play/replay button to prevent duplicate playback
-    LaunchedEffect(gameState.currentWord, isTTSReady) {
-        if (gameState.currentWord.isNotEmpty() && isTTSReady) {
-            // Brief delay to ensure button click flag propagates first
-            delay(100L)
-            if (!viewModel.shouldSkipAutoPlay()) {
-                viewModel.speakCurrentWord()
-            } else {
-                android.util.Log.d("GameScreen", "Skipping auto-play - user initiated playback recently")
-            }
+    // Observe playback trigger from ViewModel
+    val shouldPlayAudio by viewModel.shouldPlayAudio.collectAsState()
+
+    LaunchedEffect(shouldPlayAudio) {
+        if (shouldPlayAudio && isTTSReady) {
+            delay(100L)  // Brief delay for state to stabilize
+            viewModel.speakCurrentWord()
+            viewModel.markAudioPlayed()
+            android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Auto-play triggered by ViewModel")
         }
     }
 
@@ -272,7 +270,7 @@ fun GameScreen(
 
                     // Progressbar
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
+                        Text("${gameState.wordsCompleted}/${GameConstants.WORDS_PER_SESSION}", fontSize = 16.sp)
                         LinearProgressIndicator(
                             progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
                             modifier = Modifier.fillMaxWidth()
