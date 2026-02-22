@@ -1,5 +1,6 @@
 package com.spellwriter.data.models
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.spellwriter.data.repository.WordsRepository
 import kotlinx.coroutines.withTimeout
@@ -85,6 +86,7 @@ object WordPool {
      *
      * @throws IllegalStateException if any word list has incorrect distribution
      */
+    // FIXME should pass, do we need this on init?
     fun validateWordPool() {
         validateWordList("German Star 1", germanStar1, 4 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
         validateWordList("German Star 2", germanStar2, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -106,13 +108,13 @@ object WordPool {
         val shortWords = words.filter { it.length == shortLength }
         val longWords = words.filter { it.length == longLength }
 
-        check(words.size == shortCount + longCount) {
+        check(words.size >= shortCount + longCount) {
             "$name: Expected ${shortCount + longCount} words, got ${words.size}"
         }
-        check(shortWords.size == shortCount) {
+        check(shortWords.size >= shortCount) {
             "$name: Expected $shortCount $shortLength-letter words, got ${shortWords.size}"
         }
-        check(longWords.size == longCount) {
+        check(longWords.size >= longCount) {
             "$name: Expected $longCount $longLength-letter words, got ${longWords.size}"
         }
         check(words.all { it == it.uppercase() }) {
@@ -197,6 +199,8 @@ object WordPool {
         return words
             .groupBy { it.length }
             .toSortedMap()
-            .flatMap { (_, wordGroup) -> wordGroup.shuffled() }
+            .flatMap { (_, wordGroup) ->
+                wordGroup.shuffled().take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            }
     }
 }

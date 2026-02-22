@@ -129,7 +129,9 @@ fun GameScreen(
     // Observe playback trigger from ViewModel
     val shouldPlayAudio by viewModel.shouldPlayAudio.collectAsState()
 
-    LaunchedEffect(shouldPlayAudio) {
+    // Watch BOTH shouldPlayAudio AND isTTSReady to handle race conditions
+    // where TTS becomes ready after shouldPlayAudio was already set to true
+    LaunchedEffect(shouldPlayAudio, isTTSReady) {
         if (shouldPlayAudio && isTTSReady) {
             delay(100L)  // Brief delay for state to stabilize
             viewModel.speakCurrentWord()
@@ -176,13 +178,18 @@ fun GameScreen(
                             val now = System.currentTimeMillis()
                             if (now - lastPlayClick > minClickInterval) {
                                 lastPlayClick = now
-                                viewModel.speakCurrentWord()
-                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button clicked")
+                                if (isTTSReady) {
+                                    viewModel.speakCurrentWord()
+                                    android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button clicked")
+                                } else {
+                                    android.util.Log.w("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button clicked but TTS not ready")
+                                }
                             } else {
                                 android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button click debounced")
                             }
                         },
-                        modifier = Modifier.size(56.dp)
+                        modifier = Modifier.size(56.dp),
+                        enabled = isTTSReady  // Disable button when TTS not ready
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
@@ -196,13 +203,18 @@ fun GameScreen(
                             val now = System.currentTimeMillis()
                             if (now - lastPlayClick > minClickInterval) {
                                 lastPlayClick = now
-                                viewModel.speakCurrentWord()
-                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button clicked")
+                                if (isTTSReady) {
+                                    viewModel.speakCurrentWord()
+                                    android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button clicked")
+                                } else {
+                                    android.util.Log.w("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button clicked but TTS not ready")
+                                }
                             } else {
                                 android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button click debounced")
                             }
                         },
-                        modifier = Modifier.size(56.dp)
+                        modifier = Modifier.size(56.dp),
+                        enabled = isTTSReady  // Disable button when TTS not ready
                     ) {
                         Icon(
                             Icons.Default.Replay,
@@ -301,7 +313,7 @@ fun GameScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("${gameState.wordsCompleted}/${GameConstants.WORDS_PER_SESSION}", fontSize = 16.sp)
                         LinearProgressIndicator(
-                            progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
+                            progress = (gameState.wordsCompleted / GameConstants.WORDS_PER_SESSION.toFloat()).coerceIn(0f, 1f),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }

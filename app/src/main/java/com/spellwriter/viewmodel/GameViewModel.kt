@@ -72,9 +72,10 @@ class GameViewModel(
     private val _ghostExpression = MutableStateFlow(GhostExpression.NEUTRAL)
     val ghostExpression: StateFlow<GhostExpression> = _ghostExpression.asStateFlow()
 
-    // TTS speaking state for animation synchronization
-    private val _isSpeaking = MutableStateFlow(false)
-    val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
+    // TTS speaking state — delegated to AudioManager (single source of truth)
+    // Returns constant false if audioManager is null (game runs without audio)
+    val isSpeaking: StateFlow<Boolean> = audioManager?.isSpeaking
+        ?: MutableStateFlow(false).asStateFlow()
 
     /**
      * Explicit trigger for audio playback (set by ViewModel, consumed by UI).
@@ -213,20 +214,7 @@ class GameViewModel(
      */
     fun speakCurrentWord() {
         val word = _gameState.value.currentWord
-
-        audioManager?.speakWord(
-            word = word,
-            onStart = {
-                _isSpeaking.value = true
-            },
-            onDone = {
-                _isSpeaking.value = false
-            },
-            onError = {
-                _isSpeaking.value = false
-            }
-        )
-
+        audioManager?.speakWord(word)
         Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - speakCurrentWord() - Word '${_gameState.value.currentWord}' spoken.")
     }
 
@@ -530,7 +518,7 @@ class GameViewModel(
     /**
      * Handle celebration sequence completion.
      */
-    fun onCelebrationComplete() {
+    fun onAllStarsCompleted() {
         _showCelebration.value = false
         _celebrationStarLevel.value = 0
         _shouldNavigateHome.value = true  // Signal GameScreen to navigate home
@@ -559,7 +547,7 @@ class GameViewModel(
             // Replay sessions don't auto-progress - return to home immediately
             if (isReplaySession) {
                 Log.d(TAG, "Replay session - returning to home without progression")
-                onCelebrationComplete()
+                onAllStarsCompleted()
                 return@launch
             }
 
@@ -587,7 +575,7 @@ class GameViewModel(
             } else {
                 // No next star available (completed star 3) - return to home
                 Log.d(TAG, "All stars completed - returning to home")
-                onCelebrationComplete()
+                onAllStarsCompleted()
             }
         }
     }

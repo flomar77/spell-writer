@@ -5,8 +5,13 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -17,6 +22,9 @@ class AudioManager(
     private val context: Context,
     private val language: AppLanguage
 ) {
+    // Main thread scope for dispatching TTS callbacks safely to Compose
+    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     // TTS speaking state for animation synchronization
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking
@@ -71,18 +79,12 @@ class AudioManager(
 
     /**
      * Speak the given word using TTS.
+     * State is managed internally via [isSpeaking] StateFlow — callers observe that flow
+     * instead of receiving callbacks.
      *
      * @param word The word to speak
-     * @param onStart Callback when TTS starts speaking
-     * @param onDone Callback when TTS finishes speaking
-     * @param onError Callback when TTS encounters an error
      */
-    fun speakWord(
-        word: String,
-        onStart: () -> Unit,
-        onDone: () -> Unit,
-        onError: () -> Unit
-    ) {
+    fun speakWord(word: String) {
         if (word.isEmpty()) {
             Log.w(TAG, "No word to speak")
             return
@@ -91,20 +93,17 @@ class AudioManager(
         if (_isTTSReady.value && tts != null) {
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
-                    _isSpeaking.value = true
-                    onStart()
+                    mainScope.launch { _isSpeaking.value = true }
                     Log.d(TAG, "TTS started speaking: $utteranceId")
                 }
 
                 override fun onDone(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    onDone()
+                    mainScope.launch { _isSpeaking.value = false }
                     Log.d(TAG, "TTS finished speaking: $utteranceId")
                 }
 
                 override fun onError(utteranceId: String?) {
-                    _isSpeaking.value = false
-                    onError()
+                    mainScope.launch { _isSpeaking.value = false }
                     Log.w(TAG, "TTS error for utterance: $utteranceId")
                 }
             })
@@ -136,6 +135,7 @@ class AudioManager(
     fun release() {
         tts?.stop()
         tts?.shutdown()
+        mainScope.cancel()
         soundManager.release()
         Log.d(TAG, "Audio resources released")
     }

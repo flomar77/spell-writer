@@ -7,11 +7,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.World
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -30,10 +30,8 @@ import java.io.IOException
  */
 class ProgressRepository(private val context: Context) {
 
-    // Extension property for DataStore instance
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "spell_writer_progress"
-    )
+    // DataStore instance from singleton provider
+    private val dataStore: DataStore<Preferences> = DataStoreProvider.getProgressDataStore(context)
 
     /**
      * Preference keys for all persisted data.
@@ -53,7 +51,7 @@ class ProgressRepository(private val context: Context) {
      * AC4: Load saved progress on app startup
      * NFR3.3: Resume from last completed word
      */
-    val progressFlow: Flow<Progress> = context.dataStore.data
+    val progressFlow: Flow<Progress> = dataStore.data
         .catch { exception ->
             // Handle DataStore read errors gracefully
             if (exception is IOException) {
@@ -76,7 +74,7 @@ class ProgressRepository(private val context: Context) {
      * @param progress The Progress object to persist
      */
     suspend fun saveProgress(progress: Progress) {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[PreferencesKeys.WIZARD_STARS] = progress.wizardStars
             preferences[PreferencesKeys.PIRATE_STARS] = progress.pirateStars
             preferences[PreferencesKeys.CURRENT_WORLD] = progress.currentWorld.ordinal
@@ -94,7 +92,7 @@ class ProgressRepository(private val context: Context) {
      * @param wordIndex Index of last completed word (0-19)
      */
     suspend fun saveSessionState(starLevel: Int, wordIndex: Int) {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[PreferencesKeys.LAST_SESSION_STAR] = starLevel
             preferences[PreferencesKeys.LAST_WORD_INDEX] = wordIndex
         }
@@ -110,21 +108,20 @@ class ProgressRepository(private val context: Context) {
      * @return Pair of (starLevel, wordIndex) or null if no saved state
      */
     suspend fun loadSessionState(): Pair<Int, Int>? {
-        val preferences = context.dataStore.data.map { it }.catch { emit(emptyPreferences()) }
-        var result: Pair<Int, Int>? = null
-
-        preferences.collect { prefs ->
-            val starLevel = prefs[PreferencesKeys.LAST_SESSION_STAR]
-            val wordIndex = prefs[PreferencesKeys.LAST_WORD_INDEX]
-
-            result = if (starLevel != null && wordIndex != null) {
-                Pair(starLevel, wordIndex)
-            } else {
-                null
+        val prefs = dataStore.data
+            .catch { exception ->
+                if (exception is IOException) emit(emptyPreferences()) else throw exception
             }
-        }
+            .first()
 
-        return result
+        val starLevel = prefs[PreferencesKeys.LAST_SESSION_STAR]
+        val wordIndex = prefs[PreferencesKeys.LAST_WORD_INDEX]
+
+        return if (starLevel != null && wordIndex != null) {
+            Pair(starLevel, wordIndex)
+        } else {
+            null
+        }
     }
 
     /**
@@ -134,7 +131,7 @@ class ProgressRepository(private val context: Context) {
      * AC6: Clear session state on completion
      */
     suspend fun clearSessionState() {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.LAST_SESSION_STAR)
             preferences.remove(PreferencesKeys.LAST_WORD_INDEX)
         }
@@ -145,7 +142,7 @@ class ProgressRepository(private val context: Context) {
      * Different from clearSessionState() which only clears session resume data.
      */
     suspend fun clearAllProgress() {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.WIZARD_STARS)
             preferences.remove(PreferencesKeys.PIRATE_STARS)
             preferences.remove(PreferencesKeys.CURRENT_WORLD)

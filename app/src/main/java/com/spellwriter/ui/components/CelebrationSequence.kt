@@ -1,9 +1,6 @@
 package com.spellwriter.ui.components
 
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -11,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.spellwriter.data.models.CelebrationPhase
 import com.spellwriter.utils.GifSelector
@@ -20,8 +16,6 @@ import com.spellwriter.utils.GifSelector
  * Celebration sequence orchestrator with GIF reward overlay.
  *
  * Displays a random GIF reward from assets after star completion.
- * Replaces previous animation sequence (explosion/dragon/star) with
- * immediate GIF display for faster, more direct feedback.
  *
  * Flow:
  * 1. Star earned → GIF selected randomly from assets/gifs/

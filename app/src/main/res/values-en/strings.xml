@@ -14,7 +14,7 @@
     <!-- Game Screen -->
     <string name="btn_play_description">New word</string>
     <string name="btn_repeat_description">Repeat</string>
-    <string name="progress_format">%1$d/20</string>
+    <string name="progress_format">%1$d/</string>
 
     <!-- Celebrations -->
     <string name="star_earned">Star earned!</string>
@@ -24,4 +24,21 @@
     <string name="home_btn">HOME</string>
     <string name="celebration_continue">Continue</string>
     <string name="celebration_gif_description">Reward animation</string>
+
+    <!-- Game Screen -->
+    <string name="grimoire_placeholder">Type the word&#8230;</string>
+
+    <!-- Exit Dialog -->
+    <string name="exit_button_description">Exit session</string>
+    <string name="exit_dialog_title">Leave session?</string>
+    <string name="exit_dialog_message">Your progress will be saved.</string>
+    <string name="exit_dialog_stay">Stay</string>
+    <string name="exit_dialog_leave">Leave</string>
+
+    <!-- Language Indicator -->
+    <string name="language_name">English</string>
+
+    <!-- TTS Initialization -->
+    <string name="home_tts_loading">Preparing Android voice&#8230;</string>
+    <string name="home_tts_error">Android Voice not available. Playing without audio.</string>
 </resources>

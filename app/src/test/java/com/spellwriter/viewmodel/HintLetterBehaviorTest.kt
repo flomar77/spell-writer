@@ -2,7 +2,6 @@ package com.spellwriter.viewmodel
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.spellwriter.data.models.HintState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
@@ -12,6 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Unit tests for hint letter behavior in GameViewModel.
@@ -19,6 +19,7 @@ import org.robolectric.RobolectricTestRunner
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], instrumentedPackages = ["androidx.loader.content"])
 class HintLetterBehaviorTest {
 
     private lateinit var testDispatcher: TestDispatcher
@@ -31,7 +32,8 @@ class HintLetterBehaviorTest {
         Dispatchers.setMain(testDispatcher)
         context = ApplicationProvider.getApplicationContext()
         viewModel = GameViewModel(context = context, starNumber = 1)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(1)
+        testDispatcher.scheduler.runCurrent()
     }
 
     @After
@@ -47,8 +49,6 @@ class HintLetterBehaviorTest {
 
     @Test
     fun incorrectLetter_incrementsCounter() {
-        val currentWord = viewModel.gameState.value.currentWord
-
         // Type 3 incorrect letters
         repeat(3) {
             viewModel.onLetterTyped('Z')
@@ -71,7 +71,7 @@ class HintLetterBehaviorTest {
 
         // Type correct letter
         viewModel.onLetterTyped(firstLetter)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Counter should be reset - type 4 more incorrect letters and hint should not show
         repeat(4) {
@@ -92,7 +92,7 @@ class HintLetterBehaviorTest {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Hint should now appear
         assertNotNull("HintState should be set after 5 failures",
@@ -110,14 +110,14 @@ class HintLetterBehaviorTest {
 
         // Type correct first letter
         viewModel.onLetterTyped(firstLetter)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Now at position 1, type 5 incorrect letters
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         val hintState = viewModel.gameState.value.hintState
         assertNotNull("HintState should be set at position 1", hintState)
@@ -131,14 +131,12 @@ class HintLetterBehaviorTest {
 
     @Test
     fun counterResetsAfterHintShown() {
-        val currentWord = viewModel.gameState.value.currentWord
-
         // Type 5 incorrect letters to trigger hint
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Hint should be shown
         assertNotNull("Hint should be shown after 5 failures",
@@ -146,14 +144,14 @@ class HintLetterBehaviorTest {
 
         // Wait for hint to auto-clear (2000ms)
         testDispatcher.scheduler.advanceTimeBy(2100)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Type 4 more incorrect letters - hint should not show (counter was reset)
         repeat(4) {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertNull("Hint should not show again after only 4 more failures",
             viewModel.gameState.value.hintState)
@@ -168,17 +166,17 @@ class HintLetterBehaviorTest {
             viewModel.onLetterTyped(letter)
         }
 
-        testDispatcher.scheduler.advanceTimeBy(600)
-        testDispatcher.scheduler.advanceUntilIdle()
+        // Verify word is complete — typedLetters matches currentWord
+        assertEquals("Word should be fully typed",
+            currentWord, viewModel.gameState.value.typedLetters)
 
-        // Now try to trigger hint when word is complete (position out of bounds)
+        // Type Z's while word is complete (position at end / out of bounds).
+        // onLetterTyped guard: "typedLetters.length >= currentWord.length" rejects these.
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Should not crash and hint should remain null
+        // Should not crash and hint should remain null (input was rejected by guard)
         assertNull("Hint should not show when position is out of bounds",
             viewModel.gameState.value.hintState)
     }
@@ -194,14 +192,14 @@ class HintLetterBehaviorTest {
 
         // Type first letter correctly
         viewModel.onLetterTyped(currentWord[0])
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Trigger hint at position 1
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         val hintState = viewModel.gameState.value.hintState
         assertNotNull("Hint should show at position 1", hintState)
@@ -218,7 +216,7 @@ class HintLetterBehaviorTest {
             viewModel.onLetterTyped('Z')
         }
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Should have shown hint after 5 failures, counter reset
         val hintState = viewModel.gameState.value.hintState
@@ -232,19 +230,17 @@ class HintLetterBehaviorTest {
 
     @Test
     fun multipleHintsAtSamePosition_workCorrectly() {
-        val currentWord = viewModel.gameState.value.currentWord
-
         // Trigger first hint
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertNotNull("First hint should be shown", viewModel.gameState.value.hintState)
 
         // Wait for hint to clear
         testDispatcher.scheduler.advanceTimeBy(2100)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertNull("Hint should be cleared", viewModel.gameState.value.hintState)
 
@@ -252,7 +248,7 @@ class HintLetterBehaviorTest {
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertNotNull("Second hint should be shown", viewModel.gameState.value.hintState)
         assertEquals("Second hint should be at same position",
@@ -267,7 +263,7 @@ class HintLetterBehaviorTest {
         repeat(5) {
             viewModel.onLetterTyped('Z')
         }
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertNotNull("Hint should be shown", viewModel.gameState.value.hintState)
 
@@ -276,7 +272,7 @@ class HintLetterBehaviorTest {
             viewModel.onLetterTyped(letter)
         }
         testDispatcher.scheduler.advanceTimeBy(600)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         // Hint should be cleared when word completes
         assertNull("Hint should be cleared on word change",

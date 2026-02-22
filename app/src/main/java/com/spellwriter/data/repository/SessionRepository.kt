@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.spellwriter.data.models.SavedSession
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -28,10 +27,8 @@ import java.io.IOException
  */
 class SessionRepository(private val context: Context) {
 
-    // Extension property for DataStore instance (separate from progress)
-    private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "spell_writer_session"
-    )
+    // DataStore instance from singleton provider
+    private val sessionDataStore: DataStore<Preferences> = DataStoreProvider.getSessionDataStore(context)
 
     /**
      * Preference keys for session state.
@@ -56,7 +53,7 @@ class SessionRepository(private val context: Context) {
      * @param session The SavedSession object containing complete session state
      */
     suspend fun saveSession(session: SavedSession) {
-        context.sessionDataStore.edit { preferences ->
+        sessionDataStore.edit { preferences ->
             preferences[PreferencesKeys.STAR_LEVEL] = session.starLevel
             preferences[PreferencesKeys.WORDS_COMPLETED] = session.wordsCompleted
             // Store lists as comma-separated strings
@@ -78,7 +75,7 @@ class SessionRepository(private val context: Context) {
      * @return SavedSession if valid session exists, null otherwise
      */
     suspend fun loadSession(): SavedSession? {
-        val preferences = context.sessionDataStore.data
+        val preferences = sessionDataStore.data
             .catch { exception ->
                 if (exception is IOException) {
                     emit(emptyPreferences())
@@ -140,7 +137,7 @@ class SessionRepository(private val context: Context) {
      * AC7: Prevent data corruption by clearing stale sessions
      */
     suspend fun clearSession() {
-        context.sessionDataStore.edit { preferences ->
+        sessionDataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.STAR_LEVEL)
             preferences.remove(PreferencesKeys.WORDS_COMPLETED)
             preferences.remove(PreferencesKeys.COMPLETED_WORDS)

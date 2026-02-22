@@ -114,8 +114,12 @@ class WordPoolTest {
     fun getWordsForStar_shufflesWords() = runTest {
         val words1 = WordPool.getWordsForStar(1, "de")
         val words2 = WordPool.getWordsForStar(1, "de")
-        // Both have same words but likely different order due to shuffle
-        assertEquals(words1.sorted(), words2.sorted())
+        // Both should have the same count and length distribution
+        assertEquals(words1.size, words2.size)
+        assertEquals(
+            words1.map { it.length }.sorted(),
+            words2.map { it.length }.sorted()
+        )
     }
 
     // Story 2.2: Word randomization tests (AC5)
