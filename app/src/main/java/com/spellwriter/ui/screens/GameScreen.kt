@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.spellwriter.R
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spellwriter.data.models.GameConstants
@@ -103,7 +102,6 @@ fun GameScreen(
     // Story 3.1: Exit dialog and session state (AC2, AC3, AC4, AC5)
     val showExitDialog by viewModel.showExitDialog.collectAsState()
     val sessionState by viewModel.sessionState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
 
     // One-shot navigation events (consumed once, no redelivery)
     LaunchedEffect(Unit) {
@@ -322,11 +320,7 @@ fun GameScreen(
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                viewModel.confirmExit()
-                            }
-                        }
+                        onClick = { viewModel.confirmExit() }
                     ) {
                         Text(stringResource(R.string.exit_dialog_leave))
                     }

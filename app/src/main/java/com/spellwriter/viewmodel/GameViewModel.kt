@@ -633,19 +633,21 @@ class GameViewModel(
      * Confirm exit and handle state persistence.
      * Behavior depends on PERSIST_ALL_STATE constant.
      */
-    suspend fun confirmExit() {
-        Log.d(TAG, "Exit confirmed - PERSIST_ALL_STATE=${GameConstants.PERSIST_ALL_STATE}")
+    fun confirmExit() {
+        viewModelScope.launch {
+            Log.d(TAG, "Exit confirmed - PERSIST_ALL_STATE=${GameConstants.PERSIST_ALL_STATE}")
 
-        if (GameConstants.PERSIST_ALL_STATE) {
-            saveSessionProgress()
-            Log.d(TAG, "Session saved for resume")
-        } else {
-            clearAllState()
-            Log.d(TAG, "All state cleared")
+            if (GameConstants.PERSIST_ALL_STATE) {
+                saveSessionProgress()
+                Log.d(TAG, "Session saved for resume")
+            } else {
+                clearAllState()
+                Log.d(TAG, "All state cleared")
+            }
+
+            _sessionState.value = SessionState.EXITED
+            _showExitDialog.value = false
         }
-
-        _sessionState.value = SessionState.EXITED
-        _showExitDialog.value = false
     }
 
     /**
