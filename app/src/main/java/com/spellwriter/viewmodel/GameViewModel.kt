@@ -18,11 +18,14 @@ import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.data.repository.SessionRepository
 import com.spellwriter.data.repository.WordRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -78,19 +81,14 @@ class GameViewModel(
         ?: MutableStateFlow(false).asStateFlow()
 
     /**
-     * Explicit trigger for audio playback (set by ViewModel, consumed by UI).
-     *
-     * This StateFlow provides centralized control over when TTS audio should play,
-     * eliminating race conditions from dual-trigger architecture.
-     *
-     * Flow:
-     * 1. ViewModel calls triggerAudioPlayback() to set this to true
-     * 2. UI LaunchedEffect observes this and plays audio when true
-     * 3. UI calls markAudioPlayed() to reset this to false
-     *
-     * This prevents multiple playback triggers from different sources (word completion,
-     * word failure, initial load, star progression) from racing with UI auto-play logic.
+     * One-shot audio playback events. Each emission is consumed exactly once.
+     * Replaces the old StateFlow<Boolean> pattern that required manual reset.
      */
+    private val _audioEvents = Channel<Unit>(Channel.CONFLATED)
+    val audioEvents: Flow<Unit> = _audioEvents.receiveAsFlow()
+
+    // Legacy accessor for backward compatibility with existing tests.
+    // Returns a StateFlow that mirrors audio trigger state.
     private val _shouldPlayAudio = MutableStateFlow(false)
     val shouldPlayAudio: StateFlow<Boolean> = _shouldPlayAudio.asStateFlow()
 
@@ -114,7 +112,11 @@ class GameViewModel(
     private val _celebrationStarLevel = MutableStateFlow(0)
     val celebrationStarLevel: StateFlow<Int> = _celebrationStarLevel.asStateFlow()
 
-    // Navigation state for auto-progression
+    // One-shot navigation events. Each emission is consumed exactly once.
+    private val _navigationEvents = Channel<Unit>(Channel.BUFFERED)
+    val navigationEvents: Flow<Unit> = _navigationEvents.receiveAsFlow()
+
+    // Legacy accessor for backward compatibility with existing tests.
     private val _shouldNavigateHome = MutableStateFlow(false)
     val shouldNavigateHome: StateFlow<Boolean> = _shouldNavigateHome.asStateFlow()
 
@@ -194,6 +196,7 @@ class GameViewModel(
      */
     fun triggerAudioPlayback() {
         _shouldPlayAudio.value = true
+        _audioEvents.trySend(Unit)
         Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback()")
     }
 
@@ -521,7 +524,8 @@ class GameViewModel(
     fun onAllStarsCompleted() {
         _showCelebration.value = false
         _celebrationStarLevel.value = 0
-        _shouldNavigateHome.value = true  // Signal GameScreen to navigate home
+        _shouldNavigateHome.value = true  // Legacy accessor
+        _navigationEvents.trySend(Unit)  // One-shot event
         Log.d(TAG, "Celebration complete - signaling navigation to home")
     }
 
@@ -738,9 +742,41 @@ class GameViewModel(
         timeoutManager.pauseTimeouts()
     }
 
+    // Button debounce state
+    private var lastPlayClickTime = 0L
+    private var lastReplayClickTime = 0L
+
+    /**
+     * Handle play button click with debounce.
+     * @return true if click was accepted, false if debounced
+     */
+    fun onPlayButtonClicked(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastPlayClickTime < DEBOUNCE_INTERVAL_MS) return false
+        lastPlayClickTime = now
+        return true
+    }
+
+    /**
+     * Handle replay button click with debounce (independent from play).
+     * @return true if click was accepted, false if debounced
+     */
+    fun onReplayButtonClicked(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastReplayClickTime < DEBOUNCE_INTERVAL_MS) return false
+        lastReplayClickTime = now
+        return true
+    }
+
+    /** Reset play debounce (for testing). */
+    fun resetPlayDebounce() {
+        lastPlayClickTime = 0L
+    }
+
     companion object {
         private const val TAG = "GameViewModel"
 
         const val WORD_COMPLETE_DISPLAY_DELAY_MS = 500L
+        const val DEBOUNCE_INTERVAL_MS = 500L
     }
 }
