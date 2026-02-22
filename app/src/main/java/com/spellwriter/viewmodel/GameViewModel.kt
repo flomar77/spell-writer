@@ -392,7 +392,6 @@ class GameViewModel(
                     try {
                         val updatedProgress = initialProgress.earnStar(starNumber)
                         progressRepository.saveProgress(updatedProgress)
-                        progressRepository.clearSessionState()
                         Log.d(TAG, "Progress saved - Star $starNumber earned")
 
                         sessionRepository?.clearSession()
@@ -433,14 +432,6 @@ class GameViewModel(
                     completedWords = updatedCompletedWords,
                     hintState = null
                 )
-            }
-
-            if (progressRepository != null) {
-                try {
-                    progressRepository.saveSessionState(starNumber, newWordsCompleted)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to save session state", e)
-                }
             }
 
             resetTimeouts()

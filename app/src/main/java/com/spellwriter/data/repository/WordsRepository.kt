@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.network.RetrofitInstance
@@ -16,10 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 
 class WordsRepository(private val context: Context) {
-    // Extension property for DataStore instance
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "spell_writer_words"
-    )
+    private val dataStore: DataStore<Preferences> = DataStoreProvider.getWordsDataStore(context)
 
     private val json = Json { ignoreUnknownKeys = true }
     private val api = RetrofitInstance.api
@@ -98,7 +94,7 @@ class WordsRepository(private val context: Context) {
      */
     suspend fun getCachedWords(star: Int, lang: String): List<String>? {
         return try {
-            val prefs = context.dataStore.data.first()
+            val prefs = dataStore.data.first()
             val prefsAsString = prefs.toString()
             Log.d(TAG, "Prefs in cache: $prefsAsString")
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
@@ -131,7 +127,7 @@ class WordsRepository(private val context: Context) {
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
             val timestampKey = longPreferencesKey("words_star${star}_${lang}_timestamp")
             val wordsJson = json.encodeToString(words)
-            context.dataStore.edit { prefs ->
+            dataStore.edit { prefs ->
                 prefs[wordsKey] = wordsJson
                 prefs[timestampKey] = System.currentTimeMillis()
             }
@@ -148,7 +144,7 @@ class WordsRepository(private val context: Context) {
      */
     suspend fun clearAllCache() {
         try {
-            context.dataStore.edit { prefs ->
+            dataStore.edit { prefs ->
                 for (star in 1..3) {
                     for (lang in listOf("de", "en")) {
                         prefs.remove(stringPreferencesKey("words_star${star}_${lang}"))

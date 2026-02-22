@@ -21,6 +21,10 @@ private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataS
     name = "spell_writer_session"
 )
 
+private val Context.wordsDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "spell_writer_words"
+)
+
 object DataStoreProvider {
     /**
      * Get the progress DataStore instance.
@@ -34,5 +38,12 @@ object DataStoreProvider {
      */
     fun getSessionDataStore(context: Context): DataStore<Preferences> {
         return context.sessionDataStore
+    }
+
+    /**
+     * Get the words cache DataStore instance.
+     */
+    fun getWordsDataStore(context: Context): DataStore<Preferences> {
+        return context.wordsDataStore
     }
 }

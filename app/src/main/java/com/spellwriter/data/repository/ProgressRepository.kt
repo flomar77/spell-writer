@@ -11,7 +11,6 @@ import com.spellwriter.data.models.Progress
 import com.spellwriter.data.models.World
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -40,8 +39,6 @@ class ProgressRepository(private val context: Context) {
         val WIZARD_STARS = intPreferencesKey("wizard_stars")
         val PIRATE_STARS = intPreferencesKey("pirate_stars")
         val CURRENT_WORLD = intPreferencesKey("current_world")
-        val LAST_SESSION_STAR = intPreferencesKey("last_session_star")
-        val LAST_WORD_INDEX = intPreferencesKey("last_word_index")
     }
 
     /**
@@ -82,72 +79,13 @@ class ProgressRepository(private val context: Context) {
     }
 
     /**
-     * Save current session state for resume capability.
-     * Called on app backgrounding or session exit.
-     *
-     * AC6: Session state persistence on exit
-     * NFR3.2: Save on backgrounding within 100ms
-     *
-     * @param starLevel Current star level being played
-     * @param wordIndex Index of last completed word (0-19)
-     */
-    suspend fun saveSessionState(starLevel: Int, wordIndex: Int) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.LAST_SESSION_STAR] = starLevel
-            preferences[PreferencesKeys.LAST_WORD_INDEX] = wordIndex
-        }
-    }
-
-    /**
-     * Load session state for resume capability.
-     * Returns null if no session state exists.
-     *
-     * AC6: Resume session from appropriate point
-     * NFR3.3: Resume from last completed word
-     *
-     * @return Pair of (starLevel, wordIndex) or null if no saved state
-     */
-    suspend fun loadSessionState(): Pair<Int, Int>? {
-        val prefs = dataStore.data
-            .catch { exception ->
-                if (exception is IOException) emit(emptyPreferences()) else throw exception
-            }
-            .first()
-
-        val starLevel = prefs[PreferencesKeys.LAST_SESSION_STAR]
-        val wordIndex = prefs[PreferencesKeys.LAST_WORD_INDEX]
-
-        return if (starLevel != null && wordIndex != null) {
-            Pair(starLevel, wordIndex)
-        } else {
-            null
-        }
-    }
-
-    /**
-     * Clear session state after successful session completion.
-     * Called when session completes and star is earned.
-     *
-     * AC6: Clear session state on completion
-     */
-    suspend fun clearSessionState() {
-        dataStore.edit { preferences ->
-            preferences.remove(PreferencesKeys.LAST_SESSION_STAR)
-            preferences.remove(PreferencesKeys.LAST_WORD_INDEX)
-        }
-    }
-
-    /**
-     * Clear ALL progress data (stars, world, session state).
-     * Different from clearSessionState() which only clears session resume data.
+     * Clear ALL progress data (stars, world).
      */
     suspend fun clearAllProgress() {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.WIZARD_STARS)
             preferences.remove(PreferencesKeys.PIRATE_STARS)
             preferences.remove(PreferencesKeys.CURRENT_WORLD)
-            preferences.remove(PreferencesKeys.LAST_SESSION_STAR)
-            preferences.remove(PreferencesKeys.LAST_WORD_INDEX)
         }
         Log.d("ProgressRepository", "All progress cleared")
     }
