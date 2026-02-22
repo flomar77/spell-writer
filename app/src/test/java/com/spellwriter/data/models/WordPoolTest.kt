@@ -1,6 +1,5 @@
 package com.spellwriter.data.models
 
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -19,13 +18,13 @@ import org.junit.Test
 class WordPoolTest {
 
     @Test
-    fun getWordsForStar_returnsCorrectCount() = runTest {
+    fun getWordsForStar_returnsCorrectCount() {
         val words = WordPool.getWordsForStar(1, "de")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_star1HasCorrectLengths_german() = runTest {
+    fun getWordsForStar_star1HasCorrectLengths_german() {
         val words = WordPool.getWordsForStar(1, "de")
         val fourLetter = words.filter { it.length == 4 }
         val fiveLetter = words.filter { it.length == 5 }
@@ -34,7 +33,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star2HasCorrectLengths_german() = runTest {
+    fun getWordsForStar_star2HasCorrectLengths_german() {
         val words = WordPool.getWordsForStar(2, "de")
         val fiveLetter = words.filter { it.length == 5 }
         val sixLetter = words.filter { it.length == 6 }
@@ -43,7 +42,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star3HasCorrectLengths_german() = runTest {
+    fun getWordsForStar_star3HasCorrectLengths_german() {
         val words = WordPool.getWordsForStar(3, "de")
         val sixLetter = words.filter { it.length == 6 }
         val sevenLetter = words.filter { it.length == 7 }
@@ -52,7 +51,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_english_returnsCorrectCount() = runTest {
+    fun getWordsForStar_english_returnsCorrectCount() {
         val words = WordPool.getWordsForStar(1, "en")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
@@ -60,7 +59,7 @@ class WordPoolTest {
     // Story 2.2: Comprehensive word length validation tests (AC1, AC2, AC3)
 
     @Test
-    fun getWordsForStar_star1HasCorrectLengths_english() = runTest {
+    fun getWordsForStar_star1HasCorrectLengths_english() {
         val words = WordPool.getWordsForStar(1, "en")
         val fourLetter = words.filter { it.length == 4 }
         val fiveLetter = words.filter { it.length == 5 }
@@ -69,7 +68,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star2HasCorrectLengths_english() = runTest {
+    fun getWordsForStar_star2HasCorrectLengths_english() {
         val words = WordPool.getWordsForStar(2, "en")
         val fiveLetter = words.filter { it.length == 5 }
         val sixLetter = words.filter { it.length == 6 }
@@ -78,7 +77,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star3HasCorrectLengths_english() = runTest {
+    fun getWordsForStar_star3HasCorrectLengths_english() {
         val words = WordPool.getWordsForStar(3, "en")
         val sixLetter = words.filter { it.length == 6 }
         val sevenLetter = words.filter { it.length == 7 }
@@ -87,31 +86,31 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star2ReturnsCorrectCount_german() = runTest {
+    fun getWordsForStar_star2ReturnsCorrectCount_german() {
         val words = WordPool.getWordsForStar(2, "de")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_star3ReturnsCorrectCount_german() = runTest {
+    fun getWordsForStar_star3ReturnsCorrectCount_german() {
         val words = WordPool.getWordsForStar(3, "de")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_star2ReturnsCorrectCount_english() = runTest {
+    fun getWordsForStar_star2ReturnsCorrectCount_english() {
         val words = WordPool.getWordsForStar(2, "en")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_star3ReturnsCorrectCount_english() = runTest {
+    fun getWordsForStar_star3ReturnsCorrectCount_english() {
         val words = WordPool.getWordsForStar(3, "en")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_shufflesWords() = runTest {
+    fun getWordsForStar_shufflesWords() {
         val words1 = WordPool.getWordsForStar(1, "de")
         val words2 = WordPool.getWordsForStar(1, "de")
         // Both should have the same count and length distribution
@@ -125,7 +124,7 @@ class WordPoolTest {
     // Story 2.2: Word randomization tests (AC5)
 
     @Test
-    fun getWordsForStar_multipleCallsReturnDifferentOrderings_german() = runTest {
+    fun getWordsForStar_multipleCallsReturnDifferentOrderings_german() {
         // Call multiple times and verify at least one ordering differs
         // (statistically near-certain with 10 items per group)
         val orderings = (1..10).map { WordPool.getWordsForStar(1, "de") }
@@ -137,7 +136,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_multipleCallsReturnDifferentOrderings_english() = runTest {
+    fun getWordsForStar_multipleCallsReturnDifferentOrderings_english() {
         val orderings = (1..10).map { WordPool.getWordsForStar(1, "en") }
         val uniqueOrderings = orderings.toSet()
         assertTrue(
@@ -147,7 +146,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_shufflingOccursWithinLengthGroups_german() = runTest {
+    fun getWordsForStar_shufflingOccursWithinLengthGroups_german() {
         // Verify that shuffling happens within length groups, not across them
         // By checking that short words always come before long words
         repeat(10) {
@@ -163,7 +162,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_shufflingOccursWithinLengthGroups_english() = runTest {
+    fun getWordsForStar_shufflingOccursWithinLengthGroups_english() {
         repeat(10) {
             val words = WordPool.getWordsForStar(1, "en")
             val firstTen = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -175,7 +174,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_bothLanguagesUseSameShufflingLogic() = runTest {
+    fun getWordsForStar_bothLanguagesUseSameShufflingLogic() {
         // Verify both languages follow same structure: words sorted by length with shuffle within groups
         val germanWords = WordPool.getWordsForStar(2, "de")
         val englishWords = WordPool.getWordsForStar(2, "en")
@@ -196,13 +195,13 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_invalidStar_defaultsToStar1() = runTest {
+    fun getWordsForStar_invalidStar_defaultsToStar1() {
         val words = WordPool.getWordsForStar(99, "de")
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
     }
 
     @Test
-    fun getWordsForStar_allWordsAreUppercase() = runTest {
+    fun getWordsForStar_allWordsAreUppercase() {
         val words = WordPool.getWordsForStar(1, "de")
         assertTrue(words.all { word -> word == word.uppercase() })
     }
@@ -210,7 +209,7 @@ class WordPoolTest {
     // Story 2.1: Difficulty ordering tests (AC2)
 
     @Test
-    fun getWordsForStar_star1_shortWordsBeforeLongWords_german() = runTest {
+    fun getWordsForStar_star1_shortWordsBeforeLongWords_german() {
         // Run multiple times to ensure ordering is consistent despite shuffling within groups
         repeat(5) {
             val words = WordPool.getWordsForStar(1, "de")
@@ -224,7 +223,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star1_shortWordsBeforeLongWords_english() = runTest {
+    fun getWordsForStar_star1_shortWordsBeforeLongWords_english() {
         repeat(5) {
             val words = WordPool.getWordsForStar(1, "en")
             val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -236,7 +235,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star2_shortWordsBeforeLongWords_german() = runTest {
+    fun getWordsForStar_star2_shortWordsBeforeLongWords_german() {
         repeat(5) {
             val words = WordPool.getWordsForStar(2, "de")
             val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -248,7 +247,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star3_shortWordsBeforeLongWords_german() = runTest {
+    fun getWordsForStar_star3_shortWordsBeforeLongWords_german() {
         repeat(5) {
             val words = WordPool.getWordsForStar(3, "de")
             val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -260,7 +259,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_maintainsNonDecreasingLengthOrder() = runTest {
+    fun getWordsForStar_maintainsNonDecreasingLengthOrder() {
         // Verify that word lengths never decrease as we progress through the list
         val words = WordPool.getWordsForStar(1, "en")
 
@@ -275,7 +274,7 @@ class WordPoolTest {
     // Story 2.2: Difficulty progression validation tests (AC4, AC6)
 
     @Test
-    fun getWordsForStar_maintainsNonDecreasingLengthOrder_allStarsGerman() = runTest {
+    fun getWordsForStar_maintainsNonDecreasingLengthOrder_allStarsGerman() {
         // Verify non-decreasing length order for all German star levels
         for (star in 1..3) {
             repeat(5) {
@@ -291,7 +290,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_maintainsNonDecreasingLengthOrder_allStarsEnglish() = runTest {
+    fun getWordsForStar_maintainsNonDecreasingLengthOrder_allStarsEnglish() {
         // Verify non-decreasing length order for all English star levels
         for (star in 1..3) {
             repeat(5) {
@@ -307,7 +306,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_starLevelsShowClearProgression_german() = runTest {
+    fun getWordsForStar_starLevelsShowClearProgression_german() {
         // AC4: Each star level provides appropriate challenge increase
         val star1Words = WordPool.getWordsForStar(1, "de")
         val star2Words = WordPool.getWordsForStar(2, "de")
@@ -326,7 +325,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_starLevelsShowClearProgression_english() = runTest {
+    fun getWordsForStar_starLevelsShowClearProgression_english() {
         val star1Words = WordPool.getWordsForStar(1, "en")
         val star2Words = WordPool.getWordsForStar(2, "en")
         val star3Words = WordPool.getWordsForStar(3, "en")
@@ -340,7 +339,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star2_shortWordsBeforeLongWords_english() = runTest {
+    fun getWordsForStar_star2_shortWordsBeforeLongWords_english() {
         repeat(5) {
             val words = WordPool.getWordsForStar(2, "en")
             val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -352,7 +351,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_star3_shortWordsBeforeLongWords_english() = runTest {
+    fun getWordsForStar_star3_shortWordsBeforeLongWords_english() {
         repeat(5) {
             val words = WordPool.getWordsForStar(3, "en")
             val firstHalf = words.take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
@@ -364,7 +363,7 @@ class WordPoolTest {
     }
 
     @Test
-    fun getWordsForStar_shorterWordsPresentedBeforeLonger_sessionOrder() = runTest {
+    fun getWordsForStar_shorterWordsPresentedBeforeLonger_sessionOrder() {
         // AC6: Within a session, shorter words are presented before longer words
         // Verify this behavior holds across multiple calls for each star/language combo
         val configurations = listOf(
@@ -397,14 +396,14 @@ class WordPoolTest {
     // Story 2.2: WordPool validation tests (Task 5)
 
     @Test
-    fun validateWordPool_succeeds() = runTest {
+    fun validateWordPool_succeeds() {
         // Calling validateWordPool should not throw any exception
         // This also tests that the init block ran successfully
         WordPool.validateWordPool()
     }
 
     @Test
-    fun validateWordPool_calledOnInitialization() = runTest {
+    fun validateWordPool_calledOnInitialization() {
         // Simply accessing WordPool triggers the init block which calls validateWordPool
         // If the data is invalid, this would throw IllegalStateException
         val words = WordPool.getWordsForStar(1, "en")

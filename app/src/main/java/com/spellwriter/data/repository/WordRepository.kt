@@ -2,33 +2,25 @@ package com.spellwriter.data.repository
 
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.WordPool
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 
 /**
- * Repository for language-aware word and TTS locale management.
- * Story 3.3: Language Support & Switching
+ * Repository for language-aware word selection.
  *
- * Provides centralized language detection and configuration for:
- * - Automatic system language detection (AC1)
- * - Language-to-word-pool mapping (AC2, AC3)
- * - TTS locale matching (AC6)
- *
- * This repository wraps WordPool and adds language abstraction layer,
- * converting from device system language to supported AppLanguage enum.
- *
- * @see AppLanguage for supported languages
- * @see WordPool for underlying word lists
+ * Orchestrates word loading: cache → API → static fallback.
+ * Language detection maps device locale to supported AppLanguage.
  */
 object WordRepository {
     private const val TAG = "WordRepository"
+    private const val API_TIMEOUT_MS = 5000L
 
-    // Add WordsRepository instance
     private var wordsRepository: WordsRepository? = null
 
     /**
-     * Initialize the repository with context.
-     * This should be called before using getWordsForStar.
+     * Initialize with WordsRepository for API/cache access.
      */
     fun initialize(context: android.content.Context) {
         wordsRepository = WordsRepository(context)
@@ -78,16 +70,15 @@ object WordRepository {
 
     /**
      * Get words for specific star level in specified language.
-     * Story 3.3 (AC2, AC3): Language-aware word selection
      *
-     * FR8.3: German word list (60 words across 3 stars)
-     * FR8.4: English word list (60 words across 3 stars)
-     *
-     * Delegates to WordsRepository with appropriate language code conversion.
+     * Loading strategy:
+     * 1. Try cached words from WordsRepository
+     * 2. If cache miss, try API fetch (with timeout)
+     * 3. If API fails, use static fallback from WordPool
      *
      * @param star Star level (1, 2, or 3)
-     * @param language App language (defaults to system language if not specified)
-     * @return List of 20 words for the star level in specified language
+     * @param language App language (defaults to system language)
+     * @return List of words for the star level
      */
     suspend fun getWordsForStar(star: Int, language: AppLanguage = getSystemLanguage()): List<String> {
         val langCode = when (language) {
@@ -97,51 +88,32 @@ object WordRepository {
 
         Log.d(TAG, "Loading words for star $star in $language mode")
 
-        // FIXME removed for test phase where new, different words should be added
-        // First try to get from cache
-//        val cachedWords = wordsRepository?.getCachedWords(star, langCode)
-//        if (!cachedWords.isNullOrEmpty()) {
-//            Log.d(TAG, "Using cached words for star $star ($language)")
-//            return cachedWords
-//        }
-
-        // If not in cache, fetch from API
-        val result = wordsRepository?.fetchAndCacheWords(star, langCode)
-        return result?.getOrElse { exception ->
-            Log.e(TAG, "Failed to get words for star $star ($language): ${exception.message}")
-            // Fallback to WordPool if API fails
-            WordPool.getWordsForStar(star, langCode)
-        } ?: WordPool.getWordsForStar(star, langCode)
-    }
-
-    /**
-     * Get TTS locale matching app language.
-     * Story 3.3 (AC6): TTS Locale Matching
-     *
-     * FR8.6: TTS language matches app language
-     *
-     * Locale mapping:
-     * - AppLanguage.GERMAN → Locale.GERMANY (de-DE)
-     * - AppLanguage.ENGLISH → Locale.US (en-US)
-     *
-     * These locales ensure proper pronunciation:
-     * - German TTS voice for German words
-     * - American English TTS voice for English words
-     *
-     * @param language App language
-     * @return Locale for TTS configuration
-     */
-    fun getTTSLocale(language: AppLanguage): Locale {
-        return when (language) {
-            AppLanguage.GERMAN -> {
-                Log.d(TAG, "TTS locale: German (de-DE)")
-                Locale.GERMANY
+        val repo = wordsRepository
+        if (repo != null) {
+            // Try cache first
+            val cachedWords = repo.getCachedWords(star, langCode)
+            if (cachedWords != null && cachedWords.size >= GameConstants.WORDS_PER_SESSION) {
+                Log.d(TAG, "Using cached words for star $star ($language)")
+                return WordPool.shuffleByLength(cachedWords)
             }
 
-            AppLanguage.ENGLISH -> {
-                Log.d(TAG, "TTS locale: English (en-US)")
-                Locale.US
+            // Cache miss — try API with timeout
+            try {
+                val result = withTimeoutOrNull(API_TIMEOUT_MS) {
+                    repo.fetchAndCacheWords(star, langCode)
+                }
+                val words = result?.getOrNull()
+                if (words != null && words.size >= GameConstants.WORDS_PER_SESSION) {
+                    Log.i(TAG, "Using fresh API words for star $star ($language)")
+                    return WordPool.shuffleByLength(words)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "API fetch failed for star $star ($language): ${e.message}")
             }
         }
+
+        // Fallback to static words
+        Log.i(TAG, "Using static fallback words for star $star ($language)")
+        return WordPool.getWordsForStar(star, langCode)
     }
 }
