@@ -7,10 +7,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.network.RetrofitInstance
-import com.spellwriter.data.repository.WordRepository.getSystemLanguage
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 
@@ -32,14 +30,6 @@ class WordsRepository(private val context: Context) {
      * @param lang Language code ("de" or "en")
      * @return Result with list of words or error
      */
-    suspend fun fetchAndCacheNewWords(language: AppLanguage = getSystemLanguage()) {
-        val langCode = when (language) {
-            AppLanguage.GERMAN -> "de"
-            AppLanguage.ENGLISH -> "en"
-        }
-        Log.d(TAG, "Loading words in $language mode")
-    }
-
     /**
      * Fetch words from API and cache them, based on stars and language.
      *
@@ -170,5 +160,4 @@ class WordsRepository(private val context: Context) {
         else -> 3 to 4
     }
     }
-    private fun getAllLength() = listOf(3,4,5,6)
 }
