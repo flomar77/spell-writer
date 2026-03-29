@@ -15,46 +15,46 @@ package com.spellwriter.data.models
 object WordPool {
     // German word lists
     private val germanStar1 = listOf(
-        // 4-letter words (10)
-        "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ",
-        // 5-letter words (10)
-        "AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE", "FFFFF", "GGGGG", "HHHHH", "IIIII", "JJJJJ"
+        // 4-letter words (5)
+        "HAUS", "BAUM", "HUND", "BUCH", "GRAS",
+        // 5-letter words (5)
+        "TISCH", "STUHL", "LAMPE", "BLUME", "KATZE"
     )
 
     private val germanStar2 = listOf(
-        // 5-letter words (10)
-        "KKKKK", "LLLLL", "MMMMM", "NNNNN", "OOOOO", "PPPPP", "QQQQQ", "RRRRR", "SSSSS", "TTTTT",
-        // 6-letter words (10)
-        "AAAAAA", "BBBBBB", "CCCCCC", "DDDDDD", "EEEEEE", "FFFFFF", "GGGGGG", "HHHHHH", "IIIIII", "JJJJJJ"
+        // 5-letter words (5)
+        "SCHAF", "PFERD", "VOGEL", "FUCHS", "REGEN",
+        // 6-letter words (5)
+        "SCHULE", "GARTEN", "MUTTER", "BUTTER", "KUCHEN"
     )
 
     private val germanStar3 = listOf(
-        // 6-letter words (10)
-        "KKKKKK", "LLLLLL", "MMMMMM", "NNNNNN", "OOOOOO", "PPPPPP", "QQQQQQ", "RRRRRR", "SSSSSS", "TTTTTT",
-        // 7-letter words (10)
-        "AAAAAAA", "BBBBBBB", "CCCCCCC", "DDDDDDD", "EEEEEEE", "FFFFFFF", "GGGGGGG", "HHHHHHH", "IIIIIII", "JJJJJJJ"
+        // 6-letter words (5)
+        "KINDER", "SOMMER", "WINTER", "ABENDS", "STUNDE",
+        // 7-letter words (5)
+        "FENSTER", "SCHRANK", "DRUCKER", "STEMPEL", "WOHNUNG"
     )
 
     // English word lists
     private val englishStar1 = listOf(
-        // 4-letter words (10)
-        "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ",
-        // 5-letter words (10)
-        "AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE", "FFFFF", "GGGGG", "HHHHH", "IIIII", "JJJJJ"
+        // 4-letter words (5)
+        "BIRD", "FISH", "FROG", "BEAR", "WOLF",
+        // 5-letter words (5)
+        "CHAIR", "TABLE", "PLANT", "CLOCK", "BRUSH"
     )
 
     private val englishStar2 = listOf(
-        // 5-letter words (10)
-        "KKKKK", "LLLLL", "MMMMM", "NNNNN", "OOOOO", "PPPPP", "QQQQQ", "RRRRR", "SSSSS", "TTTTT",
-        // 6-letter words (10)
-        "AAAAAA", "BBBBBB", "CCCCCC", "DDDDDD", "EEEEEE", "FFFFFF", "GGGGGG", "HHHHHH", "IIIIII", "JJJJJJ"
+        // 5-letter words (5)
+        "TIGER", "EAGLE", "SNAKE", "SHEEP", "HORSE",
+        // 6-letter words (5)
+        "SCHOOL", "GARDEN", "BUTTER", "FINGER", "WINTER"
     )
 
     private val englishStar3 = listOf(
-        // 6-letter words (10)
-        "KKKKKK", "LLLLLL", "MMMMMM", "NNNNNN", "OOOOOO", "PPPPPP", "QQQQQQ", "RRRRRR", "SSSSSS", "TTTTTT",
-        // 7-letter words (10)
-        "AAAAAAA", "BBBBBBB", "CCCCCCC", "DDDDDDD", "EEEEEEE", "FFFFFFF", "GGGGGGG", "HHHHHHH", "IIIIIII", "JJJJJJJ"
+        // 6-letter words (5)
+        "CASTLE", "BRIDGE", "FLOWER", "SILVER", "FOREST",
+        // 7-letter words (5)
+        "CHICKEN", "WHISPER", "LANTERN", "BLANKET", "JOURNEY"
     )
 
     // Story 2.2: Init-time validation ensures word pool integrity

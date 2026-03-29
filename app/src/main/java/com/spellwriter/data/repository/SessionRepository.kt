@@ -15,7 +15,6 @@ import java.io.IOException
 
 /**
  * Repository for persisting partial session state using DataStore Preferences.
- * Story 3.1: Session Control & Exit Flow (AC5, AC6, AC7)
  *
  * Provides persistence for:
  * - Partial session progress (word completion count, word pools)
@@ -35,7 +34,7 @@ class SessionRepository(private val context: Context) {
      */
     private object PreferencesKeys {
         val STAR_LEVEL = intPreferencesKey("session_star_level")
-        val WORDS_COMPLETED = intPreferencesKey("session_words_completed")
+        val COMPLETED_WORDS_COUNT = intPreferencesKey("session_words_completed")
         val COMPLETED_WORDS = stringPreferencesKey("session_completed_words")
         val REMAINING_WORDS = stringPreferencesKey("session_remaining_words")
         val CURRENT_WORD_INDEX = intPreferencesKey("session_current_word_index")
@@ -46,16 +45,12 @@ class SessionRepository(private val context: Context) {
      * Save current session state to DataStore.
      * Called when user confirms exit from game session.
      *
-     * AC5: Save session progress immediately on exit
-     * FR9.4: Current word progress saved before returning to Home
-     * NFR3.2: Save completes within 100ms (DataStore is fast)
-     *
      * @param session The SavedSession object containing complete session state
      */
     suspend fun saveSession(session: SavedSession) {
         sessionDataStore.edit { preferences ->
             preferences[PreferencesKeys.STAR_LEVEL] = session.starLevel
-            preferences[PreferencesKeys.WORDS_COMPLETED] = session.wordsCompleted
+            preferences[PreferencesKeys.COMPLETED_WORDS_COUNT] = session.wordsCompleted
             // Store lists as comma-separated strings
             preferences[PreferencesKeys.COMPLETED_WORDS] = session.completedWords.joinToString(",")
             preferences[PreferencesKeys.REMAINING_WORDS] = session.remainingWords.joinToString(",")
@@ -87,7 +82,7 @@ class SessionRepository(private val context: Context) {
 
         // Check if all required keys exist
         val starLevel = preferences[PreferencesKeys.STAR_LEVEL] ?: return null
-        val wordsCompleted = preferences[PreferencesKeys.WORDS_COMPLETED] ?: return null
+        val wordsCompleted = preferences[PreferencesKeys.COMPLETED_WORDS_COUNT] ?: return null
         val completedWordsStr = preferences[PreferencesKeys.COMPLETED_WORDS] ?: return null
         val remainingWordsStr = preferences[PreferencesKeys.REMAINING_WORDS] ?: return null
         val currentWordIndex = preferences[PreferencesKeys.CURRENT_WORD_INDEX] ?: return null
@@ -139,7 +134,7 @@ class SessionRepository(private val context: Context) {
     suspend fun clearSession() {
         sessionDataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.STAR_LEVEL)
-            preferences.remove(PreferencesKeys.WORDS_COMPLETED)
+            preferences.remove(PreferencesKeys.COMPLETED_WORDS_COUNT)
             preferences.remove(PreferencesKeys.COMPLETED_WORDS)
             preferences.remove(PreferencesKeys.REMAINING_WORDS)
             preferences.remove(PreferencesKeys.CURRENT_WORD_INDEX)

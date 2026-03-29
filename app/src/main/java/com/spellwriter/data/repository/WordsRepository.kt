@@ -12,7 +12,14 @@ import com.spellwriter.data.network.RetrofitInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 
-class WordsRepository(private val context: Context) {
+/**
+ * Handles fetching and caching of word lists from the remote API.
+ *
+ * Orchestrates a cache-first strategy: callers should check [getCachedWords] before calling
+ * [fetchAndCacheWords]. Words are cached per (star, lang) pair in DataStore with a 30-day TTL.
+ * Each session gets two difficulty groups (short + long words) combined into one list.
+ */
+class WordsRepository(context: Context) {
     private val dataStore: DataStore<Preferences> = DataStoreProvider.getWordsDataStore(context)
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -25,25 +32,20 @@ class WordsRepository(private val context: Context) {
     }
 
     /**
-     * Fetch words from API and cache them.
-     *
-     * @param lang Language code ("de" or "en")
-     * @return Result with list of words or error
-     */
-    /**
      * Fetch words from API and cache them, based on stars and language.
      *
      * @param star Star level (1, 2, or 3)
      * @param lang Language code ("de" or "en")
+     * @param difficulty Filters words by difficulty. Only works when requesting 5 or fewer words.
      * @return Result with list of words or error
      */
-    suspend fun fetchAndCacheWords(star: Int, lang: String): Result<List<String>> {
+    suspend fun fetchAndCacheWords(star: Int, lang: String, difficulty: Int = 2): Result<List<String>> {
         return try {
             val (shortLength, longLength) = getLengthsForStar(star)
 
             // Fetch two groups of words
-            val shortWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, length = shortLength, lang = lang)
-            val longWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, length = longLength, lang = lang)
+            val shortWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, diff = difficulty, length = shortLength, lang = lang)
+            val longWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, diff = difficulty, length = longLength, lang = lang)
 
             val allWords = (shortWords + longWords).map { it.uppercase() }.distinct()
 

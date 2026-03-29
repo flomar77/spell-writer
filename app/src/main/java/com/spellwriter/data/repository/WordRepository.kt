@@ -28,10 +28,6 @@ object WordRepository {
 
     /**
      * Detects device system language and maps to supported app languages.
-     * Story 3.3 (AC1): Automatic language detection on app launch
-     *
-     * FR8.8: App language follows device system language setting
-     * FR8.9: Defaults to ENGLISH for unsupported languages
      *
      * Language mapping:
      * - "de" (German) → AppLanguage.GERMAN

@@ -45,17 +45,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Story 2.3: Initialize repository (AC4)
         progressRepository = ProgressRepository(this)
-
-        // Initialize WordRepository for API/cache access
         WordRepository.initialize(applicationContext)
-
-        // Story 2.3: Add lifecycle observer for persistence (AC6, NFR3.2)
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 // Save will be called from GameScreen/ViewModel if active
-                // This is handled in Task 6
             }
         })
 
