@@ -12,10 +12,10 @@
     <string name="world_locked">Locked</string>
 
     <!-- Game Screen -->
-    <string name="grimoire_placeholder">Type the word...</string>
+    <string name="grimoire_placeholder">Type the word&#8230;</string>
     <string name="btn_play_description">New word</string>
     <string name="btn_repeat_description">Repeat</string>
-    <string name="progress_format">%1$d/20</string>
+    <string name="progress_format">%1$d/</string>
 
     <!-- Story 3.1: Exit Dialog -->
     <string name="exit_button_description">Exit session</string>
@@ -30,6 +30,8 @@
     <string name="new_world_unlocked">New world unlocked!</string>
     <string name="continue_btn">CONTINUE</string>
     <string name="home_btn">HOME</string>
+    <string name="celebration_continue">Continue</string>
+    <string name="celebration_gif_description">Reward animation</string>
 
     <!-- Story 3.3: Language Indicator (AC7) -->
     <string name="language_name">English</string>

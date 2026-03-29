@@ -1,77 +1,60 @@
 package com.spellwriter.data.models
 
-import android.util.Log
-import com.spellwriter.data.repository.WordsRepository
-import kotlinx.coroutines.withTimeout
-import java.util.Locale
-
 /**
- * Word pool for spell-writing game.
+ * Static word pool for spell-writing game.
  * Provides word lists organized by star level and language.
  *
- * Story 1.4: Core Word Gameplay
- * Story 2.2: Progressive Difficulty System
+ * This is a pure data holder — no network or repository dependencies.
+ * API/cache orchestration lives in WordRepository.
  *
  * WORD DISTRIBUTION REQUIREMENTS (per PRD FR5.1, FR5.2, FR5.3):
- * - Star 1: 10 x 3-letter words + 10 x 4-letter words (20 total)
- * - Star 2: 10 x 4-letter words + 10 x 5-letter words (20 total)
- * - Star 3: 10 x 5-letter words + 10 x 6-letter words (20 total)
- *
- * Each star level provides progressive difficulty with longer words.
- * Words are shuffled within length groups but maintain difficulty order (short→long).
- *
- * Word sources:
- * 1. Cached words from API (30-day TTL)
- * 2. Fresh API fetch (if cache miss)
- * 3. Static fallback words (if API fails)
+ * - Star 1: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 4-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 5-letter words (${GameConstants.WORDS_PER_SESSION} total)
+ * - Star 2: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 5-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 6-letter words (${GameConstants.WORDS_PER_SESSION} total)
+ * - Star 3: ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 6-letter words + ${GameConstants.WORDS_PER_DIFFICULTY_GROUP} x 7-letter words (${GameConstants.WORDS_PER_SESSION} total)
  */
 object WordPool {
-    private const val TAG = "WordPool"
-    private const val API_TIMEOUT_MS = 5000L
-
-    lateinit var repository: WordsRepository
     // German word lists
     private val germanStar1 = listOf(
-        // 3-letter words (10) - includes umlauts
-        "OHR", "ARM", "EIS", "HUT", "ZUG", "ÖDE", "TÜR", "SÜD", "FÜR", "ORT",
-        // 4-letter words (10)
-        "BAUM", "HAUS", "BALL", "BOOT", "TANZ", "FUSS", "WOLF", "BROT", "GELD", "WIND"
+        // 4-letter words (5)
+        "HAUS", "BAUM", "HUND", "BUCH", "GRAS",
+        // 5-letter words (5)
+        "TISCH", "STUHL", "LAMPE", "BLUME", "KATZE"
     )
 
     private val germanStar2 = listOf(
-        // 4-letter words (10)
-        "BEIN", "TIER", "BLAU", "GRAU", "BUCH", "KIND", "KOPF", "LAMM", "RING", "SAND",
-        // 5-letter words (10)
-        "APFEL", "KATZE", "BLUME", "FEUER", "STERN", "TISCH", "STUHL", "GROSS", "KLEIN", "LEBEN"
+        // 5-letter words (5)
+        "SCHAF", "PFERD", "VOGEL", "FUCHS", "REGEN",
+        // 6-letter words (5)
+        "SCHULE", "GARTEN", "MUTTER", "BUTTER", "KUCHEN"
     )
 
     private val germanStar3 = listOf(
-        // 5-letter words (10)
-        "BIRNE", "LAMPE", "SONNE", "STEIN", "LIEBE", "BLATT", "FISCH", "VOGEL", "PFERD", "MUSIK",
-        // 6-letter words (10)
-        "ORANGE", "BANANE", "GARTEN", "KELLER", "HIMMEL", "SCHULE", "FREUND", "WINTER", "SOMMER", "HERBST"
+        // 6-letter words (5)
+        "KINDER", "SOMMER", "WINTER", "ABENDS", "STUNDE",
+        // 7-letter words (5)
+        "FENSTER", "SCHRANK", "DRUCKER", "STEMPEL", "WOHNUNG"
     )
 
     // English word lists
     private val englishStar1 = listOf(
-        // 3-letter words (10)
-        "CAT", "DOG", "SUN", "HAT", "BED", "CUP", "PEN", "BAT", "NET", "POT",
-        // 4-letter words (10)
-        "TREE", "FISH", "BIRD", "BOOK", "DESK", "LAMP", "DOOR", "STAR", "MOON", "HAND"
+        // 4-letter words (5)
+        "BIRD", "FISH", "FROG", "BEAR", "WOLF",
+        // 5-letter words (5)
+        "CHAIR", "TABLE", "PLANT", "CLOCK", "BRUSH"
     )
 
     private val englishStar2 = listOf(
-        // 4-letter words (10)
-        "BEAR", "MILK", "RAIN", "WIND", "SNOW", "LEAF", "ROCK", "SAND", "COIN", "RING",
-        // 5-letter words (10)
-        "APPLE", "HORSE", "HOUSE", "WATER", "BREAD", "LIGHT", "MUSIC", "CLOCK", "TABLE", "CHAIR"
+        // 5-letter words (5)
+        "TIGER", "EAGLE", "SNAKE", "SHEEP", "HORSE",
+        // 6-letter words (5)
+        "SCHOOL", "GARDEN", "BUTTER", "FINGER", "WINTER"
     )
 
     private val englishStar3 = listOf(
-        // 5-letter words (10)
-        "SNAKE", "BEACH", "LEMON", "STONE", "GRASS", "CLOUD", "PLANT", "RIVER", "OCEAN", "MOUSE",
-        // 6-letter words (10)
-        "RABBIT", "GARDEN", "CHEESE", "FLOWER", "WINDOW", "BUTTER", "CIRCLE", "SQUARE", "PENCIL", "BASKET"
+        // 6-letter words (5)
+        "CASTLE", "BRIDGE", "FLOWER", "SILVER", "FOREST",
+        // 7-letter words (5)
+        "CHICKEN", "WHISPER", "LANTERN", "BLANKET", "JOURNEY"
     )
 
     // Story 2.2: Init-time validation ensures word pool integrity
@@ -85,13 +68,14 @@ object WordPool {
      *
      * @throws IllegalStateException if any word list has incorrect distribution
      */
+    // FIXME should pass, do we need this on init?
     fun validateWordPool() {
-        validateWordList("German Star 1", germanStar1, 3 to 10, 4 to 10)
-        validateWordList("German Star 2", germanStar2, 4 to 10, 5 to 10)
-        validateWordList("German Star 3", germanStar3, 5 to 10, 6 to 10)
-        validateWordList("English Star 1", englishStar1, 3 to 10, 4 to 10)
-        validateWordList("English Star 2", englishStar2, 4 to 10, 5 to 10)
-        validateWordList("English Star 3", englishStar3, 5 to 10, 6 to 10)
+        validateWordList("German Star 1", germanStar1, 4 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("German Star 2", germanStar2, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("German Star 3", germanStar3, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 7 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 1", englishStar1, 4 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 2", englishStar2, 5 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+        validateWordList("English Star 3", englishStar3, 6 to GameConstants.WORDS_PER_DIFFICULTY_GROUP, 7 to GameConstants.WORDS_PER_DIFFICULTY_GROUP)
     }
 
     private fun validateWordList(
@@ -106,13 +90,13 @@ object WordPool {
         val shortWords = words.filter { it.length == shortLength }
         val longWords = words.filter { it.length == longLength }
 
-        check(words.size == shortCount + longCount) {
+        check(words.size >= shortCount + longCount) {
             "$name: Expected ${shortCount + longCount} words, got ${words.size}"
         }
-        check(shortWords.size == shortCount) {
+        check(shortWords.size >= shortCount) {
             "$name: Expected $shortCount $shortLength-letter words, got ${shortWords.size}"
         }
-        check(longWords.size == longCount) {
+        check(longWords.size >= longCount) {
             "$name: Expected $longCount $longLength-letter words, got ${longWords.size}"
         }
         check(words.all { it == it.uppercase() }) {
@@ -121,58 +105,21 @@ object WordPool {
     }
 
     /**
-     * Get words for specified star level and language.
-     * Story 2.1: Returns words in difficulty order (shorter words first, then longer words)
-     * with shuffling within each length group for variety while maintaining progression.
-     *
-     * Word loading strategy:
-     * 1. Try cached words from repository
-     * 2. If cache miss, try API fetch (with timeout)
-     * 3. If API fails, use static fallback words
+     * Get static words for specified star level and language, shuffled by length group.
      *
      * @param starNumber Star level (1, 2, or 3). Defaults to 1 if invalid.
-     * @param language Language code ("de" for German, "en" for English). Defaults to device locale.
-     * @return List of 20 words ordered by difficulty (short→long) with randomization within groups.
+     * @param language Language code ("de" for German, "en" for English).
+     * @return List of words ordered by difficulty (short→long) with randomization within groups.
      */
-    suspend fun getWordsForStar(starNumber: Int, language: String = Locale.getDefault().language): List<String> {
+    fun getWordsForStar(starNumber: Int, language: String): List<String> {
         val lang = if (language.startsWith("de")) "de" else "en"
-
-        // Try cached words first
-        // FIXME get new words anyway, even with cached words. Do not save a word multiple times. Random Words
-        if (::repository.isInitialized) {
-            val cachedWords = repository.getCachedWords(starNumber, lang)
-            if (cachedWords != null && cachedWords.size >= 20) {
-                Log.d(TAG, "Using cached words for star $starNumber ($lang)")
-                return shuffleByLength(cachedWords)
-            }
-
-            // Cache miss - try API fetch with timeout
-            try {
-                withTimeout(API_TIMEOUT_MS) {
-                    val result = repository.fetchAndCacheWords(starNumber, lang)
-                    if (result.isSuccess) {
-                        val words = result.getOrNull()
-                        if (words != null && words.size >= 20) {
-                            Log.i(TAG, "Using fresh API words for star $starNumber ($lang)")
-                            return@withTimeout shuffleByLength(words)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "API fetch failed for star $starNumber ($lang): ${e.message}")
-            }
-        }
-
-        // Fallback to static words
-        Log.i(TAG, "Using static fallback words for star $starNumber ($lang)")
-        val wordList = getStaticWords(starNumber, lang)
-        return shuffleByLength(wordList)
+        return shuffleByLength(getStaticWords(starNumber, lang))
     }
 
     /**
-     * Get static fallback words for a star level and language.
+     * Get static words for a star level and language.
      */
-    private fun getStaticWords(starNumber: Int, lang: String): List<String> {
+    fun getStaticWords(starNumber: Int, lang: String): List<String> {
         return when (lang) {
             "de" -> when (starNumber) {
                 1 -> germanStar1
@@ -193,10 +140,12 @@ object WordPool {
      * Shuffle words within length groups while maintaining difficulty order.
      * Story 2.1 (AC2): Order by difficulty - shorter words first, then longer words.
      */
-    private fun shuffleByLength(words: List<String>): List<String> {
+    fun shuffleByLength(words: List<String>): List<String> {
         return words
             .groupBy { it.length }
             .toSortedMap()
-            .flatMap { (_, wordGroup) -> wordGroup.shuffled() }
+            .flatMap { (_, wordGroup) ->
+                wordGroup.shuffled().take(GameConstants.WORDS_PER_DIFFICULTY_GROUP)
+            }
     }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.AudioManager
 import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
@@ -17,10 +18,14 @@ import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.data.repository.SessionRepository
 import com.spellwriter.data.repository.WordRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -29,7 +34,7 @@ import kotlinx.coroutines.launch
  * Manages game state, TTS, sound effects, and word progression.
  * Story 1.4: Core Word Gameplay
  * Story 1.5: Ghost expression management with auto-reset and TTS speaking state
- * Story 2.1: 20-word learning sessions with retry logic and session completion
+ * Story 2.1: ${GameConstants.WORDS_PER_SESSION}-word learning sessions with retry logic and session completion
  * Story 2.3: Progress persistence and word performance tracking
  * Story 3.1: Session control and exit flow with session persistence
  * Hint Feature: Grey hint letters after 5 consecutive failures to help young learners
@@ -57,6 +62,7 @@ class GameViewModel(
     private val isReplaySession: Boolean = false,
     private val progressRepository: ProgressRepository? = null,
     private val sessionRepository: SessionRepository? = null,
+    private val wordsRepository: com.spellwriter.data.repository.WordsRepository? = null,
     private val initialProgress: Progress = Progress(),
     private val audioManager: AudioManager? = null
 ) : ViewModel() {
@@ -69,9 +75,22 @@ class GameViewModel(
     private val _ghostExpression = MutableStateFlow(GhostExpression.NEUTRAL)
     val ghostExpression: StateFlow<GhostExpression> = _ghostExpression.asStateFlow()
 
-    // TTS speaking state for animation synchronization
-    private val _isSpeaking = MutableStateFlow(false)
-    val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
+    // TTS speaking state — delegated to AudioManager (single source of truth)
+    // Returns constant false if audioManager is null (game runs without audio)
+    val isSpeaking: StateFlow<Boolean> = audioManager?.isSpeaking
+        ?: MutableStateFlow(false).asStateFlow()
+
+    /**
+     * One-shot audio playback events. Each emission is consumed exactly once.
+     * Replaces the old StateFlow<Boolean> pattern that required manual reset.
+     */
+    private val _audioEvents = Channel<Unit>(Channel.CONFLATED)
+    val audioEvents: Flow<Unit> = _audioEvents.receiveAsFlow()
+
+    // Legacy accessor for backward compatibility with existing tests.
+    // Returns a StateFlow that mirrors audio trigger state.
+    private val _shouldPlayAudio = MutableStateFlow(false)
+    val shouldPlayAudio: StateFlow<Boolean> = _shouldPlayAudio.asStateFlow()
 
     // Job for expression auto-reset
     private var expressionResetJob: Job? = null
@@ -93,6 +112,14 @@ class GameViewModel(
     private val _celebrationStarLevel = MutableStateFlow(0)
     val celebrationStarLevel: StateFlow<Int> = _celebrationStarLevel.asStateFlow()
 
+    // One-shot navigation events. Each emission is consumed exactly once.
+    private val _navigationEvents = Channel<Unit>(Channel.BUFFERED)
+    val navigationEvents: Flow<Unit> = _navigationEvents.receiveAsFlow()
+
+    // Legacy accessor for backward compatibility with existing tests.
+    private val _shouldNavigateHome = MutableStateFlow(false)
+    val shouldNavigateHome: StateFlow<Boolean> = _shouldNavigateHome.asStateFlow()
+
     // Exit dialog and session state management
     private val _showExitDialog = MutableStateFlow(false)
     val showExitDialog: StateFlow<Boolean> = _showExitDialog.asStateFlow()
@@ -112,12 +139,6 @@ class GameViewModel(
      * - Word completes or fails
      */
     private var consecutiveFailuresAtCurrentPosition = 0
-
-    /**
-     * Flag to prevent duplicate playback when user manually clicks play/replay.
-     * Set to true on manual playback, auto-resets after 200ms.
-     */
-    private var skipNextAutoPlay = false
 
     // Expose TTS ready state to UI for proper initialization timing
     // Returns false if audioManager is null (game runs without audio)
@@ -153,44 +174,51 @@ class GameViewModel(
         }
 
         _ghostExpression.value = GhostExpression.NEUTRAL
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() on initial load")
+        triggerAudioPlayback()
         Log.d(TAG, "Loaded ${words.size} words for star $starNumber in ${_currentLanguage.value} mode")
     }
 
     /**
-     * Speak the current word using TTS.
+     * Trigger audio playback for current word.
+     *
+     * Sets [shouldPlayAudio] to true, which the UI observes via LaunchedEffect.
+     * This provides centralized control over when audio should play, eliminating
+     * race conditions from multiple trigger sources.
+     *
+     * Called by:
+     * - Word completion flow (after 300ms delay)
+     * - Word failure flow (after 2000ms delay + ghost death animation)
+     * - Initial word load (during ViewModel initialization)
+     * - Star progression (when auto-advancing to next star)
+     *
+     * The UI is responsible for calling [markAudioPlayed] after playback completes.
      */
-    fun speakCurrentWord() {
-        val word = _gameState.value.currentWord
-
-        // Set flag to prevent duplicate auto-play from LaunchedEffect
-        skipNextAutoPlay = true
-        viewModelScope.launch {
-            delay(200L) // Reset flag after 200ms
-            skipNextAutoPlay = false
-        }
-
-        audioManager?.speakWord(
-            word = word,
-            onStart = {
-                _isSpeaking.value = true
-            },
-            onDone = {
-                _isSpeaking.value = false
-            },
-            onError = {
-                _isSpeaking.value = false
-            }
-        )
-
-        Log.d(TAG, "Word '${_gameState.value.currentWord}' spoken.")
+    fun triggerAudioPlayback() {
+        _shouldPlayAudio.value = true
+        _audioEvents.trySend(Unit)
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback()")
     }
 
     /**
-     * Check if auto-play should be skipped (user just manually triggered playback).
-     * Internal visibility for testing.
+     * Mark audio playback as consumed.
+     *
+     * Resets [shouldPlayAudio] to false to prevent duplicate playback.
+     * UI must call this immediately after calling [speakCurrentWord] in response
+     * to a trigger. Failure to call this will cause the trigger to remain active.
      */
-    internal fun shouldSkipAutoPlay(): Boolean {
-        return skipNextAutoPlay
+    fun markAudioPlayed() {
+        _shouldPlayAudio.value = false
+    }
+
+    /**
+     * Speak the current word using TTS.
+     * Called directly by UI for manual Play/Replay button clicks.
+     */
+    fun speakCurrentWord() {
+        val word = _gameState.value.currentWord
+        viewModelScope.launch { audioManager?.speakWord(word) }
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - speakCurrentWord() - Word '${_gameState.value.currentWord}' spoken.")
     }
 
     /**
@@ -340,8 +368,8 @@ class GameViewModel(
 
         setGhostExpression(GhostExpression.HAPPY)
 
-        if (newWordsCompleted >= 20) {
-            Log.d(TAG, "Session complete - all 20 unique words finished")
+        if (newWordsCompleted >= GameConstants.WORDS_PER_SESSION) {
+            Log.d(TAG, "Session complete - all ${GameConstants.WORDS_PER_SESSION} unique words finished")
 
             viewModelScope.launch {
                 delay(WORD_COMPLETE_DISPLAY_DELAY_MS)
@@ -364,7 +392,6 @@ class GameViewModel(
                     try {
                         val updatedProgress = initialProgress.earnStar(starNumber)
                         progressRepository.saveProgress(updatedProgress)
-                        progressRepository.clearSessionState()
                         Log.d(TAG, "Progress saved - Star $starNumber earned")
 
                         sessionRepository?.clearSession()
@@ -407,19 +434,12 @@ class GameViewModel(
                 )
             }
 
-            if (progressRepository != null) {
-                try {
-                    progressRepository.saveSessionState(starNumber, newWordsCompleted)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to save session state", e)
-                }
-            }
-
             resetTimeouts()
 
             if (nextWord != null) {
                 delay(300)
-                speakCurrentWord()
+                Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() after word completion")
+                triggerAudioPlayback()
             } else {
                 Log.w(TAG, "No remaining words but session not complete - checking session state")
             }
@@ -470,7 +490,8 @@ class GameViewModel(
         viewModelScope.launch {
             delay(2000L)
             _ghostExpression.value = GhostExpression.NEUTRAL
-            speakCurrentWord()
+            Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() after word failure")
+            triggerAudioPlayback()
         }
     }
 
@@ -491,10 +512,96 @@ class GameViewModel(
     /**
      * Handle celebration sequence completion.
      */
-    fun onCelebrationComplete() {
+    fun onAllStarsCompleted() {
         _showCelebration.value = false
         _celebrationStarLevel.value = 0
-        Log.d(TAG, "Celebration complete - returned to normal state")
+        _shouldNavigateHome.value = true  // Legacy accessor
+        _navigationEvents.trySend(Unit)  // One-shot event
+        Log.d(TAG, "Celebration complete - signaling navigation to home")
+    }
+
+    /**
+     * Continue to next star session after GIF reward dismissed.
+     *
+     * Auto-progression flow:
+     * - Star 1 complete → Start star 2 session automatically
+     * - Star 2 complete → Start star 3 session automatically
+     * - Star 3 complete → Return to home screen (no next star)
+     *
+     * For replay sessions: Always returns to home (no auto-progression)
+     *
+     * This function:
+     * 1. Checks if replay session (if yes, return to home)
+     * 2. Fetches current progress to determine next star
+     * 3. Clears current session state
+     * 4. If next star available (<=3): Loads new word pool for next star
+     * 5. If no next star (>3): Returns to home screen
+     */
+    fun continueToNextStar() {
+        viewModelScope.launch {
+            // Replay sessions don't auto-progress - return to home immediately
+            if (isReplaySession) {
+                Log.d(TAG, "Replay session - returning to home without progression")
+                onAllStarsCompleted()
+                return@launch
+            }
+
+            // Fetch current progress to determine next star
+            val currentProgress = try {
+                progressRepository?.progressFlow?.first() ?: initialProgress
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching progress for auto-progression", e)
+                initialProgress
+            }
+
+            // Determine next star number
+            val nextStar = currentProgress.getCurrentStar()
+            Log.d(TAG, "Current progress: $currentProgress, next star: $nextStar")
+
+            // Clear celebration state
+            _showCelebration.value = false
+            _celebrationStarLevel.value = 0
+
+            // Check if next star is available
+            if (nextStar <= 3) {
+                // Load word pool for next star and continue playing
+                Log.d(TAG, "Auto-progressing to star $nextStar")
+                loadWordsForGivenStar(nextStar)
+            } else {
+                // No next star available (completed star 3) - return to home
+                Log.d(TAG, "All stars completed - returning to home")
+                onAllStarsCompleted()
+            }
+        }
+    }
+
+    /**
+     * Load words for a specific star level (used for auto-progression).
+     * Similar to loadWordsForStar() but accepts star parameter.
+     */
+    private suspend fun loadWordsForGivenStar(star: Int) {
+        val words = WordRepository.getWordsForStar(star, _currentLanguage.value)
+        wordPerformanceTracker.reset()
+
+        val firstWord = words.firstOrNull() ?: ""
+        wordPerformanceTracker.startWordTracking(firstWord)
+
+        _gameState.update {
+            it.copy(
+                wordPool = words,
+                currentWord = firstWord.uppercase(),
+                wordsCompleted = 0,
+                typedLetters = "",
+                sessionComplete = false,
+                remainingWords = words.drop(1),
+                failedWords = emptyList()
+            )
+        }
+
+        _ghostExpression.value = GhostExpression.NEUTRAL
+        Log.d(TAG, "[AUDIO] ${System.currentTimeMillis()} - triggerAudioPlayback() on star progression")
+        triggerAudioPlayback()
+        Log.d(TAG, "Auto-progression: Loaded ${words.size} words for star $star in ${_currentLanguage.value} mode")
     }
 
     /**
@@ -514,15 +621,24 @@ class GameViewModel(
     }
 
     /**
-     * Confirm exit and save session.
+     * Confirm exit and handle state persistence.
+     * Behavior depends on PERSIST_ALL_STATE constant.
      */
-    suspend fun confirmExit() {
-        Log.d(TAG, "Exit confirmed - saving session and returning to home")
+    fun confirmExit() {
+        viewModelScope.launch {
+            Log.d(TAG, "Exit confirmed - PERSIST_ALL_STATE=${GameConstants.PERSIST_ALL_STATE}")
 
-        saveSessionProgress()
+            if (GameConstants.PERSIST_ALL_STATE) {
+                saveSessionProgress()
+                Log.d(TAG, "Session saved for resume")
+            } else {
+                clearAllState()
+                Log.d(TAG, "All state cleared")
+            }
 
-        _sessionState.value = SessionState.EXITED
-        _showExitDialog.value = false
+            _sessionState.value = SessionState.EXITED
+            _showExitDialog.value = false
+        }
     }
 
     /**
@@ -556,6 +672,25 @@ class GameViewModel(
             Log.d(TAG, "Session saved - ${savedSession.wordsCompleted} words completed, ${savedSession.remainingWords.size} remaining")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save session", e)
+        }
+    }
+
+    /**
+     * Clear all application state (session, progress, word cache).
+     * Called when PERSIST_ALL_STATE = false and user exits to home.
+     */
+    private suspend fun clearAllState() {
+        try {
+            sessionRepository?.clearSession()
+            Log.d(TAG, "Session cleared")
+
+            progressRepository?.clearAllProgress()
+            Log.d(TAG, "Progress cleared")
+
+            wordsRepository?.clearAllCache()
+            Log.d(TAG, "Word cache cleared")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear state", e)
         }
     }
 
@@ -600,9 +735,41 @@ class GameViewModel(
         timeoutManager.pauseTimeouts()
     }
 
+    // Button debounce state
+    private var lastPlayClickTime = 0L
+    private var lastReplayClickTime = 0L
+
+    /**
+     * Handle play button click with debounce.
+     * @return true if click was accepted, false if debounced
+     */
+    fun onPlayButtonClicked(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastPlayClickTime < DEBOUNCE_INTERVAL_MS) return false
+        lastPlayClickTime = now
+        return true
+    }
+
+    /**
+     * Handle replay button click with debounce (independent from play).
+     * @return true if click was accepted, false if debounced
+     */
+    fun onReplayButtonClicked(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - lastReplayClickTime < DEBOUNCE_INTERVAL_MS) return false
+        lastReplayClickTime = now
+        return true
+    }
+
+    /** Reset play debounce (for testing). */
+    fun resetPlayDebounce() {
+        lastPlayClickTime = 0L
+    }
+
     companion object {
         private const val TAG = "GameViewModel"
 
         const val WORD_COMPLETE_DISPLAY_DELAY_MS = 500L
+        const val DEBOUNCE_INTERVAL_MS = 500L
     }
 }

@@ -7,18 +7,20 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import com.spellwriter.data.models.AppLanguage
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.network.RetrofitInstance
-import com.spellwriter.data.repository.WordRepository.getSystemLanguage
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 
-class WordsRepository(private val context: Context) {
-    // Extension property for DataStore instance
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "spell_writer_words"
-    )
+/**
+ * Handles fetching and caching of word lists from the remote API.
+ *
+ * Orchestrates a cache-first strategy: callers should check [getCachedWords] before calling
+ * [fetchAndCacheWords]. Words are cached per (star, lang) pair in DataStore with a 30-day TTL.
+ * Each session gets two difficulty groups (short + long words) combined into one list.
+ */
+class WordsRepository(context: Context) {
+    private val dataStore: DataStore<Preferences> = DataStoreProvider.getWordsDataStore(context)
 
     private val json = Json { ignoreUnknownKeys = true }
     private val api = RetrofitInstance.api
@@ -30,49 +32,36 @@ class WordsRepository(private val context: Context) {
     }
 
     /**
-     * Fetch words from API and cache them.
-     *
-     * @param lang Language code ("de" or "en")
-     * @return Result with list of words or error
-     */
-    suspend fun fetchAndCacheNewWords(language: AppLanguage = getSystemLanguage()) {
-        val langCode = when (language) {
-            AppLanguage.GERMAN -> "de"
-            AppLanguage.ENGLISH -> "en"
-        }
-        Log.d(TAG, "Loading words in $language mode")
-    }
-
-    /**
      * Fetch words from API and cache them, based on stars and language.
      *
      * @param star Star level (1, 2, or 3)
      * @param lang Language code ("de" or "en")
+     * @param difficulty Filters words by difficulty. Only works when requesting 5 or fewer words.
      * @return Result with list of words or error
      */
-    suspend fun fetchAndCacheWords(star: Int, lang: String): Result<List<String>> {
+    suspend fun fetchAndCacheWords(star: Int, lang: String, difficulty: Int = 2): Result<List<String>> {
         return try {
             val (shortLength, longLength) = getLengthsForStar(star)
 
             // Fetch two groups of words
-            val shortWords = api.getWords(number = 10, length = shortLength, lang = lang)
-            val longWords = api.getWords(number = 10, length = longLength, lang = lang)
+            val shortWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, diff = difficulty, length = shortLength, lang = lang)
+            val longWords = api.getWords(number = GameConstants.WORDS_PER_DIFFICULTY_GROUP, diff = difficulty, length = longLength, lang = lang)
 
             val allWords = (shortWords + longWords).map { it.uppercase() }.distinct()
 
             // Validate word count and lengths
-            if (allWords.size < 20) {
+            if (allWords.size < GameConstants.WORDS_PER_SESSION) {
                 Log.w(TAG, "API returned insufficient words: ${allWords.size} for star $star")
                 return Result.failure(Exception("Insufficient words returned from API"))
             }
 
-            val validWords = allWords.take(20)
+            val validWords = allWords.take(GameConstants.WORDS_PER_SESSION)
 
             // Validate lengths
             val shortCount = validWords.count { it.length == shortLength }
             val longCount = validWords.count { it.length == longLength }
 
-            if (shortCount < 10 || longCount < 10) {
+            if (shortCount < GameConstants.WORDS_PER_DIFFICULTY_GROUP || longCount < GameConstants.WORDS_PER_DIFFICULTY_GROUP) {
                 Log.w(TAG, "Invalid word distribution: $shortCount short, $longCount long for star $star")
                 return Result.failure(Exception("Invalid word length distribution"))
             }
@@ -97,7 +86,7 @@ class WordsRepository(private val context: Context) {
      */
     suspend fun getCachedWords(star: Int, lang: String): List<String>? {
         return try {
-            val prefs = context.dataStore.data.first()
+            val prefs = dataStore.data.first()
             val prefsAsString = prefs.toString()
             Log.d(TAG, "Prefs in cache: $prefsAsString")
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
@@ -130,7 +119,7 @@ class WordsRepository(private val context: Context) {
             val wordsKey = stringPreferencesKey("words_star${star}_${lang}")
             val timestampKey = longPreferencesKey("words_star${star}_${lang}_timestamp")
             val wordsJson = json.encodeToString(words)
-            context.dataStore.edit { prefs ->
+            dataStore.edit { prefs ->
                 prefs[wordsKey] = wordsJson
                 prefs[timestampKey] = System.currentTimeMillis()
             }
@@ -142,16 +131,35 @@ class WordsRepository(private val context: Context) {
     }
 
     /**
+     * Clear all cached words for all stars and languages.
+     * Removes 12 DataStore keys (6 word lists + 6 timestamps).
+     */
+    suspend fun clearAllCache() {
+        try {
+            dataStore.edit { prefs ->
+                for (star in 1..3) {
+                    for (lang in listOf("de", "en")) {
+                        prefs.remove(stringPreferencesKey("words_star${star}_${lang}"))
+                        prefs.remove(longPreferencesKey("words_star${star}_${lang}_timestamp"))
+                    }
+                }
+            }
+            Log.d(TAG, "All word cache cleared")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear word cache", e)
+        }
+    }
+
+    /**
      * Get word lengths for a star level.
      * FIXME This class actually doesnt need to know about Stars (single responsibility principle)
      */
     private fun getLengthsForStar(star: Int): Pair<Int, Int> {
-        return when (star) {
-            1 -> 3 to 4
-            2 -> 4 to 5
-            3 -> 5 to 6
-            else -> 3 to 4
-        }
+    return when (star) {
+        1 -> 4 to 5
+        2 -> 5 to 6
+        3 -> 6 to 7
+        else -> 3 to 4
     }
-    private fun getAllLength() = listOf(3,4,5,6)
+    }
 }

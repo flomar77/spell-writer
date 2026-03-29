@@ -21,9 +21,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.spellwriter.audio.AudioManager
 import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.Progress
-import com.spellwriter.data.models.WordPool
 import com.spellwriter.data.repository.ProgressRepository
-import com.spellwriter.data.repository.WordsRepository
+import com.spellwriter.data.repository.WordRepository
 import com.spellwriter.ui.screens.GameScreen
 import com.spellwriter.ui.screens.HomeScreen
 import com.spellwriter.ui.theme.SpellWriterTheme
@@ -46,18 +45,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Story 2.3: Initialize repository (AC4)
         progressRepository = ProgressRepository(this)
-
-        // Initialize WordsRepository and inject into WordPool
-        val wordsRepository = WordsRepository(applicationContext)
-        WordPool.repository = wordsRepository
-
-        // Story 2.3: Add lifecycle observer for persistence (AC6, NFR3.2)
+        WordRepository.initialize(applicationContext)
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 // Save will be called from GameScreen/ViewModel if active
-                // This is handled in Task 6
             }
         })
 

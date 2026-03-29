@@ -8,7 +8,6 @@ import android.util.Log
 import com.spellwriter.data.models.AppLanguage
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.getOfflineTtsConfig
-import com.spellwriter.tts.ModelConfig
 import com.spellwriter.tts.TtsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +30,9 @@ class AudioManager(
     private val context: Context,
     private val language: AppLanguage
 ) {
+    // Main thread scope for dispatching TTS callbacks safely to Compose
+    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     // TTS speaking state for animation synchronization
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking
@@ -244,19 +246,12 @@ class AudioManager(
 
     /**
      * Speak the given word using sherpa-onnx TTS with streaming audio.
-     * Uses generateWithCallback() for real-time audio generation and AudioTrack for playback.
+     * State is managed internally via [isSpeaking] StateFlow — callers observe that flow
+     * instead of receiving callbacks.
      *
      * @param word The word to speak
-     * @param onStart Callback when TTS starts speaking
-     * @param onDone Callback when TTS finishes speaking
-     * @param onError Callback when TTS encounters an error
      */
-    fun speakWord(
-        word: String,
-        onStart: () -> Unit,
-        onDone: () -> Unit,
-        onError: () -> Unit
-    ) {
+    suspend fun speakWord(word: String) {
         if (word.isEmpty()) {
             Log.w(TAG, "No word to speak")
             return
@@ -267,57 +262,45 @@ class AudioManager(
             return
         }
 
-        coroutineScope.launch(Dispatchers.IO) {
-            try {
-                Log.d(TAG, "Speaking word: $word")
+        try {
+            Log.d(TAG, "Speaking word: $word")
 
-                // Update state and notify start
-                _isSpeaking.value = true
-                onStart()
+            _isSpeaking.value = true
 
-                // Generate audio (returns all samples at once)
-                Log.d(TAG, "Generating audio...")
-                val audio = tts?.generate(
-                    text = word,
-                    sid = 0,      // Single speaker model
-                    speed = 0.9f  // Slightly slower for clarity
-                )
+            val audio = tts?.generate(
+                text = word,
+                sid = 0,
+                speed = 0.9f
+            )
 
-                if (audio != null) {
-                    Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
+            if (audio != null) {
+                Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
 
-                    // Prepare AudioTrack
-                    track?.pause()
-                    track?.flush()
-                    track?.play()
+                track?.pause()
+                track?.flush()
+                track?.play()
 
-                    // Write all audio samples to AudioTrack
-                    val bytesWritten = track?.write(
-                        audio.samples,
-                        0,
-                        audio.samples.size,
-                        AudioTrack.WRITE_BLOCKING
-                    ) ?: 0
+                val bytesWritten = track?.write(
+                    audio.samples,
+                    0,
+                    audio.samples.size,
+                    AudioTrack.WRITE_BLOCKING
+                ) ?: 0
 
-                    Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
+                Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
 
-                    // Wait for playback to complete
-                    val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
-                    delay(durationMs + 100)
-                } else {
-                    Log.w(TAG, "Audio generation returned null")
-                }
-
-                // Update state and notify completion
-                _isSpeaking.value = false
-                onDone()
-                Log.d(TAG, "Finished speaking: $word")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error speaking word: ${e.message}", e)
-                _isSpeaking.value = false
-                onError()
+                val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
+                delay(durationMs + 100)
+            } else {
+                Log.w(TAG, "Audio generation returned null")
             }
+
+            _isSpeaking.value = false
+            Log.d(TAG, "Finished speaking: $word")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error speaking word: ${e.message}", e)
+            _isSpeaking.value = false
         }
     }
 
@@ -339,12 +322,12 @@ class AudioManager(
      * Clean up audio resources.
      */
     fun release() {
-        coroutineScope.cancel()
         track?.stop()
         track?.release()
         track = null
         tts?.free()
         tts = null
+        mainScope.cancel()
         soundManager.release()
         Log.d(TAG, "Audio resources released")
     }

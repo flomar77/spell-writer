@@ -24,9 +24,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.spellwriter.R
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.Progress
 import com.spellwriter.data.repository.ProgressRepository
 import com.spellwriter.ui.components.CelebrationSequence
@@ -71,12 +71,19 @@ fun GameScreen(
     // Story 1.4, 2.3: GameViewModel integration with TTS and gameplay logic + persistence
     // AudioManager Injection: Pass audioManager to GameViewModel and include in remember key
     val context = LocalContext.current
+
+    // Create repositories
+    val sessionRepository = remember { com.spellwriter.data.repository.SessionRepository(context) }
+    val wordsRepository = remember { com.spellwriter.data.repository.WordsRepository(context) }
+
     val viewModel = remember(starNumber, isReplaySession, audioManager) {
         GameViewModel(
             context = context,
             starNumber = starNumber,
             isReplaySession = isReplaySession,
             progressRepository = progressRepository,
+            sessionRepository = sessionRepository,
+            wordsRepository = wordsRepository,
             initialProgress = currentProgress,
             audioManager = audioManager
         )
@@ -95,11 +102,10 @@ fun GameScreen(
     // Story 3.1: Exit dialog and session state (AC2, AC3, AC4, AC5)
     val showExitDialog by viewModel.showExitDialog.collectAsState()
     val sessionState by viewModel.sessionState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
 
-    // Story 2.1, 2.3: Trigger star completion callback when session completes (AC6)
-    LaunchedEffect(gameState.sessionComplete) {
-        if (gameState.sessionComplete) {
+    // One-shot navigation events (consumed once, no redelivery)
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvents.collect {
             onStarComplete?.invoke(starNumber)
         }
     }
@@ -112,17 +118,14 @@ fun GameScreen(
         }
     }
 
-    // Automatically speak the word when it changes and TTS is ready
-    // Wait for TTS initialization to avoid race condition on app start
-    // Skip if user just clicked play/replay button to prevent duplicate playback
-    LaunchedEffect(gameState.currentWord, isTTSReady) {
-        if (gameState.currentWord.isNotEmpty() && isTTSReady) {
-            // Brief delay to ensure button click flag propagates first
-            delay(100L)
-            if (!viewModel.shouldSkipAutoPlay()) {
+    // One-shot audio events (consumed once, no manual reset needed)
+    // Read isTTSReady from the StateFlow directly to avoid stale capture
+    LaunchedEffect(Unit) {
+        viewModel.audioEvents.collect {
+            if (viewModel.isTTSReady.value) {
+                delay(100L)  // Brief delay for state to stabilize
                 viewModel.speakCurrentWord()
-            } else {
-                android.util.Log.d("GameScreen", "Skipping auto-play - user initiated playback recently")
+                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Auto-play triggered by ViewModel")
             }
         }
     }
@@ -161,8 +164,14 @@ fun GameScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { viewModel.speakCurrentWord() },  // AC1: Play word
-                        modifier = Modifier.size(56.dp)
+                        onClick = {
+                            if (viewModel.onPlayButtonClicked() && isTTSReady) {
+                                viewModel.speakCurrentWord()
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Play button clicked")
+                            }
+                        },
+                        modifier = Modifier.size(56.dp),
+                        enabled = isTTSReady
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
@@ -172,8 +181,14 @@ fun GameScreen(
                     }
                     Spacer(modifier = Modifier.width(24.dp))
                     IconButton(
-                        onClick = { viewModel.speakCurrentWord() },  // AC2: Repeat word
-                        modifier = Modifier.size(56.dp)
+                        onClick = {
+                            if (viewModel.onReplayButtonClicked() && isTTSReady) {
+                                viewModel.speakCurrentWord()
+                                android.util.Log.d("GameScreen", "[AUDIO] ${System.currentTimeMillis()} - Replay button clicked")
+                            }
+                        },
+                        modifier = Modifier.size(56.dp),
+                        enabled = isTTSReady
                     ) {
                         Icon(
                             Icons.Default.Replay,
@@ -270,9 +285,9 @@ fun GameScreen(
 
                     // Progressbar
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("${gameState.wordsCompleted}/20", fontSize = 16.sp)
+                        Text("${gameState.wordsCompleted}/${GameConstants.WORDS_PER_SESSION}", fontSize = 16.sp)
                         LinearProgressIndicator(
-                            progress = (gameState.wordsCompleted / 20f).coerceIn(0f, 1f),
+                            progress = (gameState.wordsCompleted / GameConstants.WORDS_PER_SESSION.toFloat()).coerceIn(0f, 1f),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -280,11 +295,11 @@ fun GameScreen(
             }
         }
 
-        // Story 2.4: Celebration overlay (AC1, AC2, AC3, AC4, AC6, AC7)
+        // GIF Reward Celebration overlay with auto-progression
         CelebrationSequence(
             showCelebration = showCelebration,
             starLevel = celebrationStarLevel,
-            onCelebrationComplete = { viewModel.onCelebrationComplete() }
+            onContinueToNextStar = { viewModel.continueToNextStar() }
         )
 
         // Story 3.1: Exit confirmation dialog (AC2, AC3, AC4, AC5)
@@ -305,11 +320,7 @@ fun GameScreen(
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                viewModel.confirmExit()
-                            }
-                        }
+                        onClick = { viewModel.confirmExit() }
                     ) {
                         Text(stringResource(R.string.exit_dialog_leave))
                     }

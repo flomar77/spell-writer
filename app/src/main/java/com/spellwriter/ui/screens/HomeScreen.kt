@@ -24,8 +24,6 @@ import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
 import com.spellwriter.ui.components.Ghost
 import com.spellwriter.ui.components.WorldProgressRow
-import com.spellwriter.viewmodel.GameViewModel
-import com.spellwriter.viewmodel.HomeViewModel
 
 /**
  * Extension function to find the ComponentActivity from a Context.

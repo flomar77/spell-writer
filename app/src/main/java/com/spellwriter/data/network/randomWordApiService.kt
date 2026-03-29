@@ -14,12 +14,14 @@ interface RandomWordApiService {
      * @param number Number of words to fetch
      * @param length Word length (3, 4, 5, or 6 letters)
      * @param lang Language code ("de" for German, "en" for English)
+     * @param diff Filters words by difficulty. Only works when requesting 5 or fewer words.
      * @return List of random words
      */
     @GET("/word")
     suspend fun getWords(
         @Query("number") number: Int,
         @Query("length") length: Int,
-        @Query("lang") lang: String
+        @Query("lang") lang: String,
+        @Query("diff") diff: Int
     ): List<String>
 }

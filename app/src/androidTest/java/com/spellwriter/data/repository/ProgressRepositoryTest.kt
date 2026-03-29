@@ -121,58 +121,6 @@ class ProgressRepositoryTest {
         assertEquals(2, loaded.wizardStars)
     }
 
-    // AC6: Session state persistence
-    @Test
-    fun saveSessionState_persistsStarLevelAndWordIndex() = testScope.runTest {
-        repository.saveSessionState(starLevel = 2, wordIndex = 15)
-
-        val sessionState = repository.loadSessionState()
-        assertNotNull(sessionState)
-        assertEquals(2, sessionState?.first)
-        assertEquals(15, sessionState?.second)
-    }
-
-    @Test
-    fun loadSessionState_returnsNullWhenNoStateSaved() = testScope.runTest {
-        val sessionState = repository.loadSessionState()
-        assertNull(sessionState)
-    }
-
-    @Test
-    fun saveSessionState_overwritesPreviousState() = testScope.runTest {
-        repository.saveSessionState(starLevel = 1, wordIndex = 5)
-        repository.saveSessionState(starLevel = 3, wordIndex = 18)
-
-        val sessionState = repository.loadSessionState()
-        assertEquals(3, sessionState?.first)
-        assertEquals(18, sessionState?.second)
-    }
-
-    @Test
-    fun clearSessionState_removesSessionData() = testScope.runTest {
-        repository.saveSessionState(starLevel = 2, wordIndex = 10)
-
-        repository.clearSessionState()
-
-        val sessionState = repository.loadSessionState()
-        assertNull(sessionState)
-    }
-
-    @Test
-    fun clearSessionState_doesNotAffectProgress() = testScope.runTest {
-        val progress = Progress(wizardStars = 2)
-        repository.saveProgress(progress)
-        repository.saveSessionState(starLevel = 2, wordIndex = 10)
-
-        repository.clearSessionState()
-
-        val loaded = repository.progressFlow.first()
-        assertEquals(2, loaded.wizardStars)
-
-        val sessionState = repository.loadSessionState()
-        assertNull(sessionState)
-    }
-
     // NFR3.1: Multiple progress updates
     @Test
     fun saveProgress_handlesMultipleSequentialSaves() = testScope.runTest {
@@ -220,21 +168,4 @@ class ProgressRepositoryTest {
         assertEquals(3, loaded.pirateStars)
     }
 
-    @Test
-    fun saveSessionState_handlesMaximumWordIndex() = testScope.runTest {
-        repository.saveSessionState(starLevel = 3, wordIndex = 19)
-
-        val sessionState = repository.loadSessionState()
-        assertEquals(3, sessionState?.first)
-        assertEquals(19, sessionState?.second)
-    }
-
-    @Test
-    fun saveSessionState_handlesMinimumValues() = testScope.runTest {
-        repository.saveSessionState(starLevel = 1, wordIndex = 0)
-
-        val sessionState = repository.loadSessionState()
-        assertEquals(1, sessionState?.first)
-        assertEquals(0, sessionState?.second)
-    }
 }
