@@ -56,12 +56,35 @@ data class OfflineTtsZipVoiceModelConfig(
     var guidanceScale: Float = 1.0f,
 )
 
+data class OfflineTtsPocketModelConfig(
+    var lmFlow: String = "",
+    var lmMain: String = "",
+    var encoder: String = "",
+    var decoder: String = "",
+    var textConditioner: String = "",
+    var vocabJson: String = "",
+    var tokenScoresJson: String = "",
+    var voiceEmbeddingCacheCapacity: Int = 50,
+)
+
+data class OfflineTtsSupertonicModelConfig(
+    var durationPredictor: String = "",
+    var textEncoder: String = "",
+    var vectorEstimator: String = "",
+    var vocoder: String = "",
+    var ttsJson: String = "",
+    var unicodeIndexer: String = "",
+    var voiceStyle: String = "",
+)
+
 data class OfflineTtsModelConfig(
     var vits: OfflineTtsVitsModelConfig = OfflineTtsVitsModelConfig(),
     var matcha: OfflineTtsMatchaModelConfig = OfflineTtsMatchaModelConfig(),
     var kokoro: OfflineTtsKokoroModelConfig = OfflineTtsKokoroModelConfig(),
-    var kitten: OfflineTtsKittenModelConfig = OfflineTtsKittenModelConfig(),
     var zipvoice: OfflineTtsZipVoiceModelConfig = OfflineTtsZipVoiceModelConfig(),
+    var kitten: OfflineTtsKittenModelConfig = OfflineTtsKittenModelConfig(),
+    var pocket: OfflineTtsPocketModelConfig = OfflineTtsPocketModelConfig(),
+    var supertonic: OfflineTtsSupertonicModelConfig = OfflineTtsSupertonicModelConfig(),
     var numThreads: Int = 1,
     var debug: Boolean = false,
     var provider: String = "cpu",
@@ -111,32 +134,20 @@ class OfflineTts(
         text: String,
         sid: Int = 0,
         speed: Float = 1.0f
-    ): GeneratedAudio {
-        val objArray = generateImpl(ptr, text = text, sid = sid, speed = speed)
-        return GeneratedAudio(
-            samples = objArray[0] as FloatArray,
-            sampleRate = objArray[1] as Int
-        )
-    }
+    ): GeneratedAudio = generateImpl(ptr, text = text, sid = sid, speed = speed)
 
     fun generateWithCallback(
         text: String,
         sid: Int = 0,
         speed: Float = 1.0f,
         callback: (samples: FloatArray) -> Int
-    ): GeneratedAudio {
-        val objArray = generateWithCallbackImpl(
-            ptr,
-            text = text,
-            sid = sid,
-            speed = speed,
-            callback = callback
-        )
-        return GeneratedAudio(
-            samples = objArray[0] as FloatArray,
-            sampleRate = objArray[1] as Int
-        )
-    }
+    ): GeneratedAudio = generateWithCallbackImpl(
+        ptr,
+        text = text,
+        sid = sid,
+        speed = speed,
+        callback = callback
+    )
 
     fun allocate(assetManager: AssetManager? = null) {
         if (ptr == 0L) {
@@ -177,16 +188,12 @@ class OfflineTts(
     private external fun getSampleRate(ptr: Long): Int
     private external fun getNumSpeakers(ptr: Long): Int
 
-    // The returned array has two entries:
-    //  - the first entry is an 1-D float array containing audio samples.
-    //    Each sample is normalized to the range [-1, 1]
-    //  - the second entry is the sample rate
     private external fun generateImpl(
         ptr: Long,
         text: String,
         sid: Int = 0,
         speed: Float = 1.0f
-    ): Array<Any>
+    ): GeneratedAudio
 
     private external fun generateWithCallbackImpl(
         ptr: Long,
@@ -194,7 +201,7 @@ class OfflineTts(
         sid: Int = 0,
         speed: Float = 1.0f,
         callback: (samples: FloatArray) -> Int
-    ): Array<Any>
+    ): GeneratedAudio
 
     companion object {
         init {
