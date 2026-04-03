@@ -10,7 +10,6 @@ data class ModelConfig(
     val modelDir: String,
     val modelName: String,
     val tokensPath: String,
-    val espeakDataPath: String
 )
 
 /**
@@ -31,13 +30,11 @@ object TtsModelConfig {
                 modelDir = "vits-piper-de_DE-kerstin-low-int8",
                 modelName = "de_DE-kerstin-low.onnx",
                 tokensPath = "vits-piper-de_DE-kerstin-low-int8/tokens.txt",
-                espeakDataPath = "vits-piper-de_DE-kerstin-low-int8/espeak-ng-data"
             )
             AppLanguage.ENGLISH -> ModelConfig(
-                modelDir = "vits-piper-en_US-alan-low-int8",
-                modelName = "en_US-alan-low.onnx",
-                tokensPath = "vits-piper-en_US-alan-low-int8/tokens.txt",
-                espeakDataPath = "vits-piper-en_US-alan-low-int8/espeak-ng-data"
+                modelDir = "vits-piper-en_EN-alan-low-int8",
+                modelName = "en_GB-alan-low.onnx",
+                tokensPath = "vits-piper-en_EN-alan-low-int8/tokens.txt",
             )
         }
     }

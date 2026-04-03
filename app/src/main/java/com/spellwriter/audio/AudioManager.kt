@@ -53,28 +53,30 @@ class AudioManager(
     }
 
     /**
-     * Copy espeak-ng-data from assets to external storage.
+     * Copy model directory from assets to external storage.
      * Required for sherpa-onnx TTS which needs file paths (not AssetManager).
+     * Loading large ONNX models via AssetManager uses mmap and can corrupt
+     * HWUI's native heap on some Samsung devices — file path avoids this.
      * Skips copying if target directory already exists (optimization).
      *
-     * @param espeakDataPath Path to espeak-ng-data in assets (e.g., "vits-piper-de_DE-thorsten-low-int8/espeak-ng-data")
+     * @param modelDir Asset-relative model directory (e.g., "vits-piper-de_DE-kerstin-low-int8")
      */
-    private suspend fun copyEspeakDataToExternal(espeakDataPath: String) = withContext(Dispatchers.IO) {
-        val targetDir = File(context.getExternalFilesDir(null), "espeak-ng-data")
+    private suspend fun copyModelToExternal(modelDir: String) = withContext(Dispatchers.IO) {
+        val targetDir = File(context.getExternalFilesDir(null), modelDir)
 
         // Optimization: skip if already copied
         if (targetDir.exists()) {
-            Log.d(TAG, "espeak-ng-data already exists at: ${targetDir.absolutePath}")
+            Log.d(TAG, "Model already exists at: ${targetDir.absolutePath}")
             return@withContext
         }
 
         try {
-            Log.d(TAG, "Copying espeak-ng-data from assets/$espeakDataPath to ${targetDir.absolutePath}")
+            Log.d(TAG, "Copying model from assets/$modelDir to ${targetDir.absolutePath}")
             targetDir.mkdirs()
-            copyAssetsRecursive(espeakDataPath, targetDir)
-            Log.d(TAG, "Successfully copied espeak-ng-data")
+            copyAssetsRecursive(modelDir, targetDir)
+            Log.d(TAG, "Successfully copied model directory")
         } catch (e: IOException) {
-            Log.e(TAG, "Failed to copy espeak-ng-data: ${e.message}", e)
+            Log.e(TAG, "Failed to copy model directory: ${e.message}", e)
             throw e
         }
     }
@@ -182,22 +184,25 @@ class AudioManager(
                 val modelConfig = TtsModelConfig.getConfigForLanguage(language)
                 Log.d(TAG, "Model config: modelDir=${modelConfig.modelDir}, modelName=${modelConfig.modelName}")
 
-                // Copy espeak-ng-data to external storage (required for file paths)
-                Log.d(TAG, "Copying espeak-ng-data from: ${modelConfig.espeakDataPath}")
-                copyEspeakDataToExternal(modelConfig.espeakDataPath)
-                Log.d(TAG, "espeak-ng-data copy completed")
+                // Copy model directory to external storage.
+                // Loading 60MB ONNX via AssetManager (mmap) corrupts HWUI heap on Samsung devices.
+                // File path loading avoids this entirely.
+                Log.d(TAG, "Copying model directory: ${modelConfig.modelDir}")
+                copyModelToExternal(modelConfig.modelDir)
+                Log.d(TAG, "Model copy completed")
 
-                // Get external espeak-ng-data path
-                val externalEspeakPath = File(
+                // Resolve absolute external paths for model files
+                val externalModelDir = File(
                     context.getExternalFilesDir(null),
-                    "espeak-ng-data"
+                    modelConfig.modelDir
                 ).absolutePath
-                Log.d(TAG, "External espeak path: $externalEspeakPath")
+                val externalEspeakPath = "$externalModelDir/espeak-ng-data"
+                Log.d(TAG, "External model dir: $externalModelDir")
 
-                // Build OfflineTts configuration
+                // Build OfflineTts configuration with absolute file paths
                 Log.d(TAG, "Building OfflineTts configuration...")
                 val config = getOfflineTtsConfig(
-                    modelDir = modelConfig.modelDir,
+                    modelDir = externalModelDir,
                     modelName = modelConfig.modelName,
                     acousticModelName = "", // Not using Matcha
                     vocoder = "", // Not using Matcha
@@ -211,10 +216,10 @@ class AudioManager(
                 )
                 Log.d(TAG, "Config built successfully")
 
-                // Create OfflineTts instance with AssetManager
+                // Create OfflineTts instance via file path (assetManager = null → newFromFile)
                 Log.d(TAG, "Creating OfflineTts instance...")
                 tts = OfflineTts(
-                    assetManager = context.assets,
+                    assetManager = null,
                     config = config
                 )
                 Log.d(TAG, "OfflineTts instance created")
@@ -267,32 +272,34 @@ class AudioManager(
 
             _isSpeaking.value = true
 
-            val audio = tts?.generate(
-                text = word,
-                sid = 0,
-                speed = 0.9f
-            )
+            withContext(Dispatchers.IO) {
+                val audio = tts?.generate(
+                    text = word,
+                    sid = 0,
+                    speed = 0.9f
+                )
 
-            if (audio != null) {
-                Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
+                if (audio != null) {
+                    Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
 
-                track?.pause()
-                track?.flush()
-                track?.play()
+                    track?.pause()
+                    track?.flush()
+                    track?.play()
 
-                val bytesWritten = track?.write(
-                    audio.samples,
-                    0,
-                    audio.samples.size,
-                    AudioTrack.WRITE_BLOCKING
-                ) ?: 0
+                    val bytesWritten = track?.write(
+                        audio.samples,
+                        0,
+                        audio.samples.size,
+                        AudioTrack.WRITE_BLOCKING
+                    ) ?: 0
 
-                Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
+                    Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
 
-                val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
-                delay(durationMs + 100)
-            } else {
-                Log.w(TAG, "Audio generation returned null")
+                    val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
+                    delay(durationMs + 100)
+                } else {
+                    Log.w(TAG, "Audio generation returned null")
+                }
             }
 
             _isSpeaking.value = false

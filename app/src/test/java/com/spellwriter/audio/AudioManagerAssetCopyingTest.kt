@@ -24,9 +24,9 @@ class AudioManagerAssetCopyingTest {
         // These methods will be added in the implementation step
         // Test will fail (red phase) until implementation is complete
         assertTrue(
-            "AudioManager should have copyEspeakDataToExternal or similar method",
+            "AudioManager should have copyModelToExternal or similar method",
             methodNames.any {
-                it.contains("copyEspeakData") ||
+                it.contains("copyModel") ||
                 it.contains("copyAssets") ||
                 it.contains("initializeAssets")
             }

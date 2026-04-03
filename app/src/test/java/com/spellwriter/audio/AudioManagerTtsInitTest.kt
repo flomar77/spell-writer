@@ -149,8 +149,8 @@ class AudioManagerTtsInitTest {
         val methodNames = methods.map { it.name }
 
         assertTrue(
-            "AudioManager should have copyEspeakDataToExternal method",
-            methodNames.any { it.contains("copyEspeak") || it.contains("copyAssets") }
+            "AudioManager should have copyModelToExternal method",
+            methodNames.any { it.contains("copyModel") || it.contains("copyAssets") }
         )
     }
 
