@@ -28,7 +28,7 @@ class SoundManager(private val context: Context) {
         try {
             // Load success sound
             successPlayer = try {
-                MediaPlayer.create(context, R.raw.success)
+                MediaPlayer.create(context, R.raw.success)?.apply { setVolume(0.2f, 0.2f) }
             } catch (e: Exception) {
                 Log.w(TAG, "Success sound not found - continuing without sound", e)
                 null
@@ -36,7 +36,7 @@ class SoundManager(private val context: Context) {
 
             // Load error sound
             errorPlayer = try {
-                MediaPlayer.create(context, R.raw.error)
+                MediaPlayer.create(context, R.raw.error)?.apply { setVolume(0.2f, 0.2f) }
             } catch (e: Exception) {
                 Log.w(TAG, "Error sound not found - continuing without sound", e)
                 null

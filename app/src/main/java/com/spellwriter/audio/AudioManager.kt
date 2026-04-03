@@ -7,16 +7,18 @@ import android.media.AudioTrack
 import android.util.Log
 import com.spellwriter.data.models.AppLanguage
 import com.k2fsa.sherpa.onnx.OfflineTts
-import com.k2fsa.sherpa.onnx.getOfflineTtsConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import com.spellwriter.tts.TtsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -30,9 +32,6 @@ class AudioManager(
     private val context: Context,
     private val language: AppLanguage
 ) {
-    // Main thread scope for dispatching TTS callbacks safely to Compose
-    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
     // TTS speaking state for animation synchronization
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking
@@ -44,8 +43,8 @@ class AudioManager(
     // Coroutine scope for async TTS operations
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    private val speakMutex = Mutex()
     private var tts: OfflineTts? = null
-    private var track: AudioTrack? = null
     private val soundManager = SoundManager(context)
 
     init {
@@ -122,54 +121,6 @@ class AudioManager(
     }
 
     /**
-     * Initialize AudioTrack for PCM audio playback.
-     * Creates AudioTrack with sample rate from TTS, PCM_FLOAT encoding, mono channel.
-     */
-    private fun initializeAudioTrack() {
-        try {
-            val sampleRate = tts?.sampleRate() ?: 22050
-            Log.d(TAG, "Initializing AudioTrack with sample rate: $sampleRate Hz")
-
-            // Calculate buffer size for streaming audio
-            val bufferLength = AudioTrack.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_FLOAT
-            )
-
-            // Build audio attributes for speech/media playback
-            val audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-
-            // Build audio format for PCM float mono
-            val audioFormat = AudioFormat.Builder()
-                .setSampleRate(sampleRate)
-                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                .build()
-
-            // Create AudioTrack in streaming mode
-            track = AudioTrack(
-                audioAttributes,
-                audioFormat,
-                bufferLength,
-                AudioTrack.MODE_STREAM,
-                android.media.AudioManager.AUDIO_SESSION_ID_GENERATE
-            )
-
-            // Start AudioTrack in play state (ready to receive samples)
-            track?.play()
-            Log.d(TAG, "AudioTrack initialized and started")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize AudioTrack: ${e.message}", e)
-            track = null
-        }
-    }
-
-    /**
      * Initialize sherpa-onnx TTS with appropriate model.
      * Sets up OfflineTts asynchronously with model loading.
      */
@@ -199,20 +150,22 @@ class AudioManager(
                 val externalEspeakPath = "$externalModelDir/espeak-ng-data"
                 Log.d(TAG, "External model dir: $externalModelDir")
 
-                // Build OfflineTts configuration with absolute file paths
+                // Build OfflineTts configuration with absolute file paths.
+                // Build manually to avoid getOfflineTtsConfig constructing a non-empty
+                // lexicon path ("$modelDir/") when lexicon is empty — piper doesn't use lexicon.
                 Log.d(TAG, "Building OfflineTts configuration...")
-                val config = getOfflineTtsConfig(
-                    modelDir = externalModelDir,
-                    modelName = modelConfig.modelName,
-                    acousticModelName = "", // Not using Matcha
-                    vocoder = "", // Not using Matcha
-                    voices = "", // Not using Kokoro/Kitten
-                    lexicon = "", // Piper models don't use separate lexicon
-                    dataDir = externalEspeakPath,
-                    dictDir = "", // Unused
-                    ruleFsts = "",
-                    ruleFars = "",
-                    numThreads = 2 // Balance of speed and CPU usage
+                val config = OfflineTtsConfig(
+                    model = OfflineTtsModelConfig(
+                        vits = OfflineTtsVitsModelConfig(
+                            model = "$externalModelDir/${modelConfig.modelName}",
+                            lexicon = "", // Piper uses espeak-ng, not lexicon
+                            tokens = "$externalModelDir/tokens.txt",
+                            dataDir = externalEspeakPath,
+                        ),
+                        numThreads = 2,
+                        debug = true,
+                        provider = "cpu",
+                    ),
                 )
                 Log.d(TAG, "Config built successfully")
 
@@ -228,9 +181,6 @@ class AudioManager(
                 val sampleRate = tts?.sampleRate() ?: 0
                 Log.d(TAG, "Got sample rate: $sampleRate Hz")
                 if (sampleRate > 0) {
-                    // Initialize AudioTrack with TTS sample rate
-                    initializeAudioTrack()
-
                     _isTTSReady.value = true
                     Log.d(TAG, "TTS initialized successfully - sample rate: $sampleRate Hz")
                 } else {
@@ -250,7 +200,7 @@ class AudioManager(
     }
 
     /**
-     * Speak the given word using sherpa-onnx TTS with streaming audio.
+     * Speak the given word using sherpa-onnx TTS with a fresh AudioTrack per word.
      * State is managed internally via [isSpeaking] StateFlow — callers observe that flow
      * instead of receiving callbacks.
      *
@@ -262,11 +212,12 @@ class AudioManager(
             return
         }
 
-        if (!_isTTSReady.value || tts == null || track == null) {
-            Log.w(TAG, "TTS or AudioTrack not ready - continuing without audio")
+        if (!_isTTSReady.value || tts == null) {
+            Log.w(TAG, "TTS not ready - continuing without audio")
             return
         }
 
+        speakMutex.withLock {
         try {
             Log.d(TAG, "Speaking word: $word")
 
@@ -276,27 +227,54 @@ class AudioManager(
                 val audio = tts?.generate(
                     text = word,
                     sid = 0,
-                    speed = 0.9f
+                    speed = 0.7f
                 )
 
                 if (audio != null) {
-                    Log.d(TAG, "Audio generated: ${audio.samples.size} samples at ${audio.sampleRate} Hz")
+                    // Convert float [-1, 1] to 16-bit PCM shorts
+                    val shorts = ShortArray(audio.samples.size) { i ->
+                        (audio.samples[i].coerceIn(-1f, 1f) * 32767).toInt().toShort()
+                    }
 
-                    track?.pause()
-                    track?.flush()
-                    track?.play()
+                    val audioAttributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
 
-                    val bytesWritten = track?.write(
-                        audio.samples,
-                        0,
-                        audio.samples.size,
-                        AudioTrack.WRITE_BLOCKING
-                    ) ?: 0
+                    val audioFormat = AudioFormat.Builder()
+                        .setSampleRate(audio.sampleRate)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
 
-                    Log.d(TAG, "Wrote $bytesWritten floats to AudioTrack")
+                    val minBufSize = AudioTrack.getMinBufferSize(
+                        audio.sampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT
+                    )
 
-                    val durationMs = (audio.samples.size * 1000 / audio.sampleRate).toLong()
-                    delay(durationMs + 100)
+                    // Fresh MODE_STREAM AudioTrack per word — play() before write() so engine
+                    // starts immediately with no startup gap
+                    val wordTrack = AudioTrack(
+                        audioAttributes,
+                        audioFormat,
+                        maxOf(shorts.size * 2, minBufSize),
+                        AudioTrack.MODE_STREAM,
+                        android.media.AudioManager.AUDIO_SESSION_ID_GENERATE
+                    )
+
+                    val silenceSamples = audio.sampleRate / 4 // 250ms padding before and after
+                    val silence = ShortArray(silenceSamples)
+                    wordTrack.play()
+                    wordTrack.write(silence, 0, silence.size)
+                    wordTrack.write(shorts, 0, shorts.size)
+                    wordTrack.write(silence, 0, silence.size)
+
+                    val durationMs = ((shorts.size + silenceSamples * 2) * 1000L / audio.sampleRate)
+                    Thread.sleep(durationMs + 200)
+
+                    wordTrack.stop()
+                    wordTrack.release()
                 } else {
                     Log.w(TAG, "Audio generation returned null")
                 }
@@ -309,6 +287,7 @@ class AudioManager(
             Log.e(TAG, "Error speaking word: ${e.message}", e)
             _isSpeaking.value = false
         }
+        } // speakMutex
     }
 
     /**
@@ -329,12 +308,8 @@ class AudioManager(
      * Clean up audio resources.
      */
     fun release() {
-        track?.stop()
-        track?.release()
-        track = null
         tts?.free()
         tts = null
-        mainScope.cancel()
         soundManager.release()
         Log.d(TAG, "Audio resources released")
     }

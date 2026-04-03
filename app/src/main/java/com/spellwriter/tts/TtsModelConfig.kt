@@ -27,9 +27,9 @@ object TtsModelConfig {
     fun getConfigForLanguage(language: AppLanguage): ModelConfig {
         return when (language) {
             AppLanguage.GERMAN -> ModelConfig(
-                modelDir = "vits-piper-de_DE-kerstin-low-int8",
-                modelName = "de_DE-kerstin-low.onnx",
-                tokensPath = "vits-piper-de_DE-kerstin-low-int8/tokens.txt",
+                modelDir = "vits-piper-de_DE-thorsten-medium",
+                modelName = "de_DE-thorsten-medium.onnx",
+                tokensPath = "vits-piper-de_DE-thorsten-medium/tokens.txt",
             )
             AppLanguage.ENGLISH -> ModelConfig(
                 modelDir = "vits-piper-en_EN-alan-low-int8",
