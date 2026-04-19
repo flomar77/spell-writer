@@ -224,7 +224,7 @@ class GameScreenLayoutTest {
         composeTestRule.setContent {
             GameScreen(
                 starNumber = 3,
-                currentProgress = com.spellwriter.data.models.Progress(wizardStars = 2),
+                currentProgress = com.spellwriter.data.models.Progress(stars = 2),
                 onBackPress = {},
                 onStarComplete = null
             )

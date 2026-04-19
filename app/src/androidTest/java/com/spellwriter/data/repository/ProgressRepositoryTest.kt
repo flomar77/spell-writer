@@ -8,7 +8,6 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.spellwriter.data.models.Progress
-import com.spellwriter.data.models.World
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -20,16 +19,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Unit tests for ProgressRepository DataStore persistence.
- * Story 2.3: Session Completion & Tracking
- *
- * Tests verify:
- * - Progress saving and loading
- * - Session state persistence
- * - Data survives "app restart" (new repository instance)
- * - Error handling for corrupted data
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class ProgressRepositoryTest {
@@ -44,7 +33,6 @@ class ProgressRepositoryTest {
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
 
-        // Create a test DataStore with a unique name for each test
         testDataStore = PreferenceDataStoreFactory.create(
             scope = testScope,
             produceFile = { context.preferencesDataStoreFile("test_progress_${System.currentTimeMillis()}") }
@@ -55,117 +43,75 @@ class ProgressRepositoryTest {
 
     @After
     fun cleanup() {
-        // Clean up test files
         testScope.cancel()
     }
 
-    // AC4: Progress saved immediately after word completion
     @Test
-    fun saveProgress_persistsWizardStars() = testScope.runTest {
-        val progress = Progress(wizardStars = 2, pirateStars = 0, currentWorld = World.WIZARD)
+    fun saveProgress_persistsStars() = testScope.runTest {
+        val progress = Progress(stars = 2)
 
         repository.saveProgress(progress)
 
         val loaded = repository.progressFlow.first()
-        assertEquals(2, loaded.wizardStars)
-        assertEquals(0, loaded.pirateStars)
-        assertEquals(World.WIZARD, loaded.currentWorld)
+        assertEquals(2, loaded.stars)
     }
 
-    @Test
-    fun saveProgress_persistsPirateStars() = testScope.runTest {
-        val progress = Progress(wizardStars = 3, pirateStars = 2, currentWorld = World.PIRATE)
-
-        repository.saveProgress(progress)
-
-        val loaded = repository.progressFlow.first()
-        assertEquals(3, loaded.wizardStars)
-        assertEquals(2, loaded.pirateStars)
-        assertEquals(World.PIRATE, loaded.currentWorld)
-    }
-
-    // AC4: Progress persists across "app restarts" (new repository instance)
     @Test
     fun saveProgress_survivesRepositoryRecreation() = testScope.runTest {
-        val progress = Progress(wizardStars = 3, pirateStars = 1, currentWorld = World.PIRATE)
+        val progress = Progress(stars = 3)
 
         repository.saveProgress(progress)
 
-        // Simulate app restart by creating new repository instance
         val newRepository = ProgressRepository(context)
         val loaded = newRepository.progressFlow.first()
 
-        assertEquals(3, loaded.wizardStars)
-        assertEquals(1, loaded.pirateStars)
-        assertEquals(World.PIRATE, loaded.currentWorld)
+        assertEquals(3, loaded.stars)
     }
 
     @Test
     fun progressFlow_emitsDefaultValuesWhenNoDataSaved() = testScope.runTest {
         val loaded = repository.progressFlow.first()
 
-        assertEquals(0, loaded.wizardStars)
-        assertEquals(0, loaded.pirateStars)
-        assertEquals(World.WIZARD, loaded.currentWorld)
+        assertEquals(0, loaded.stars)
     }
 
     @Test
     fun saveProgress_overwritesPreviousData() = testScope.runTest {
-        // Save initial progress
-        repository.saveProgress(Progress(wizardStars = 1))
-
-        // Overwrite with new progress
-        repository.saveProgress(Progress(wizardStars = 2))
+        repository.saveProgress(Progress(stars = 1))
+        repository.saveProgress(Progress(stars = 2))
 
         val loaded = repository.progressFlow.first()
-        assertEquals(2, loaded.wizardStars)
+        assertEquals(2, loaded.stars)
     }
 
-    // NFR3.1: Multiple progress updates
     @Test
     fun saveProgress_handlesMultipleSequentialSaves() = testScope.runTest {
-        repository.saveProgress(Progress(wizardStars = 1))
-        repository.saveProgress(Progress(wizardStars = 2))
-        repository.saveProgress(Progress(wizardStars = 3))
+        repository.saveProgress(Progress(stars = 1))
+        repository.saveProgress(Progress(stars = 2))
+        repository.saveProgress(Progress(stars = 3))
 
         val loaded = repository.progressFlow.first()
-        assertEquals(3, loaded.wizardStars)
-    }
-
-    @Test
-    fun saveProgress_handlesAllWorlds() = testScope.runTest {
-        // Test WIZARD world
-        repository.saveProgress(Progress(currentWorld = World.WIZARD))
-        var loaded = repository.progressFlow.first()
-        assertEquals(World.WIZARD, loaded.currentWorld)
-
-        // Test PIRATE world
-        repository.saveProgress(Progress(currentWorld = World.PIRATE))
-        loaded = repository.progressFlow.first()
-        assertEquals(World.PIRATE, loaded.currentWorld)
+        assertEquals(3, loaded.stars)
     }
 
     @Test
     fun progressFlow_emitsUpdatesWhenProgressSaved() = testScope.runTest {
         val initial = repository.progressFlow.first()
-        assertEquals(0, initial.wizardStars)
+        assertEquals(0, initial.stars)
 
-        repository.saveProgress(Progress(wizardStars = 1))
+        repository.saveProgress(Progress(stars = 1))
 
         val updated = repository.progressFlow.first()
-        assertEquals(1, updated.wizardStars)
+        assertEquals(1, updated.stars)
     }
 
-    // Edge cases
     @Test
     fun saveProgress_handlesMaximumStars() = testScope.runTest {
-        val progress = Progress(wizardStars = 3, pirateStars = 3)
+        val progress = Progress(stars = 3)
 
         repository.saveProgress(progress)
 
         val loaded = repository.progressFlow.first()
-        assertEquals(3, loaded.wizardStars)
-        assertEquals(3, loaded.pirateStars)
+        assertEquals(3, loaded.stars)
     }
-
 }

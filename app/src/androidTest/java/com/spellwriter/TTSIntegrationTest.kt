@@ -119,7 +119,7 @@ class TTSIntegrationTest {
         runBlocking {
             // First, earn some stars by setting progress
             val progressRepository = ProgressRepository(context)
-            progressRepository.saveProgress(Progress(wizardStars = 2))
+            progressRepository.saveProgress(Progress(stars = 2))
 
             // Wait for progress to update
             delay(200)

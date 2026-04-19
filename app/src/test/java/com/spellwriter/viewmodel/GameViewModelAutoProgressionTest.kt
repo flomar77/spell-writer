@@ -3,7 +3,6 @@ package com.spellwriter.viewmodel
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.spellwriter.data.models.Progress
-import com.spellwriter.data.models.World
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -59,7 +58,7 @@ class GameViewModelAutoProgressionTest {
             starNumber = 1,
             isReplaySession = true,
             progressRepository = null,
-            initialProgress = Progress(wizardStars = 1)
+            initialProgress = Progress(stars = 1)
         )
 
         // When: continueToNextStar is called
@@ -81,7 +80,7 @@ class GameViewModelAutoProgressionTest {
             starNumber = 1,
             isReplaySession = false,
             progressRepository = null,
-            initialProgress = Progress(wizardStars = 0, currentWorld = World.WIZARD)
+            initialProgress = Progress(stars = 0)
         )
 
         // When: continueToNextStar is called
@@ -104,7 +103,7 @@ class GameViewModelAutoProgressionTest {
             starNumber = 1,
             isReplaySession = false,
             progressRepository = null,
-            initialProgress = Progress(wizardStars = 3, currentWorld = World.WIZARD)
+            initialProgress = Progress(stars = 3)
         )
 
         // When: continueToNextStar is called (all stars earned, should navigate home)

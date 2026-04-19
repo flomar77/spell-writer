@@ -101,8 +101,7 @@ fun HomeScreen(
 
         // Star Progress Display (Story 1.2)
         WorldProgressRow(
-            worldName = stringResource(R.string.world_wizard),
-            earnedStars = progress.wizardStars,
+            earnedStars = progress.stars,
             onStarClick = onStarClick
         )
 

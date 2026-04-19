@@ -418,7 +418,7 @@ class MainActivityTTSTest {
                 }
 
                 HomeScreen(
-                    progress = Progress(wizardStars = 3), // Have earned stars
+                    progress = Progress(stars = 3), // Have earned stars
                     onPlayClick = {},
                     onStarClick = { starNumber ->
                         selectedStar = starNumber

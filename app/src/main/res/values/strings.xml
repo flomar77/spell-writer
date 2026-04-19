@@ -7,9 +7,7 @@
     <string name="home_title">SPELL WRITER</string>
     <string name="home_instruction">To win, write the words you will hear correctly</string>
     <string name="home_play">PLAY</string>
-    <string name="world_wizard">Wizard World</string>
-    <string name="world_pirate">Pirate World</string>
-    <string name="world_locked">Locked</string>
+    <string name="world_1">World 1</string>
 
     <!-- Game Screen -->
     <string name="grimoire_placeholder">Type the word&#8230;</string>

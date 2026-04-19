@@ -214,7 +214,7 @@ fun GameScreen(
             ) {
                 // Left side: Session stars
                 StarProgress(
-                    completedStars = currentProgress.wizardStars,
+                    completedStars = currentProgress.stars,
                     modifier = Modifier.padding(end = 8.dp)
                 )
 

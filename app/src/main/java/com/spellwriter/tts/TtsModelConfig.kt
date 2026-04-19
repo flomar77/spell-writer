@@ -32,9 +32,9 @@ object TtsModelConfig {
                 tokensPath = "vits-piper-de_DE-thorsten-medium/tokens.txt",
             )
             AppLanguage.ENGLISH -> ModelConfig(
-                modelDir = "vits-piper-en_EN-alan-low-int8",
+                modelDir = "vits-piper-en_GB-alan-low-int8",
                 modelName = "en_GB-alan-low.onnx",
-                tokensPath = "vits-piper-en_EN-alan-low-int8/tokens.txt",
+                tokensPath = "vits-piper-en_GB-alan-low-int8/tokens.txt",
             )
         }
     }
