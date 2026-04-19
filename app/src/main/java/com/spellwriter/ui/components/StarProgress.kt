@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.spellwriter.data.models.MAX_STARS
 
 /**
  * Session star progress component for game screen.
@@ -31,8 +32,8 @@ fun StarProgress(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        repeat(3) { index ->
-            val starNumber = 3 - index  // Display from top to bottom: 3, 2, 1
+        repeat(MAX_STARS) { index ->
+            val starNumber = MAX_STARS - index  // Display from top to bottom
             val isCompleted = starNumber <= completedStars
 
             Icon(
