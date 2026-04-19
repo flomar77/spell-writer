@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.spellwriter.data.models.GameConstants
+import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.network.RetrofitInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
@@ -137,7 +138,7 @@ class WordsRepository(context: Context) {
     suspend fun clearAllCache() {
         try {
             dataStore.edit { prefs ->
-                for (star in 1..3) {
+                for (star in 1..MAX_STARS) {
                     for (lang in listOf("de", "en")) {
                         prefs.remove(stringPreferencesKey("words_star${star}_${lang}"))
                         prefs.remove(longPreferencesKey("words_star${star}_${lang}_timestamp"))
@@ -155,11 +156,14 @@ class WordsRepository(context: Context) {
      * FIXME This class actually doesnt need to know about Stars (single responsibility principle)
      */
     private fun getLengthsForStar(star: Int): Pair<Int, Int> {
-    return when (star) {
-        1 -> 4 to 5
-        2 -> 5 to 6
-        3 -> 6 to 7
-        else -> 3 to 4
-    }
+        return when (star) {
+            1 -> 3 to 4
+            2 -> 4 to 5
+            3 -> 5 to 6
+            4 -> 6 to 7
+            5 -> 7 to 8
+            6 -> 8 to 9
+            else -> 3 to 4
+        }
     }
 }
