@@ -87,7 +87,7 @@ class WordRepositoryTest {
 
     @Test
     fun getWordsForStar_fallback_returnsCorrectLengthDistribution() = runBlocking {
-        val expectedLengths = mapOf(1 to Pair(4, 5), 2 to Pair(5, 6), 3 to Pair(6, 7))
+        val expectedLengths = mapOf(1 to Pair(3, 4), 2 to Pair(4, 5), 3 to Pair(5, 6))
 
         for ((star, lengths) in expectedLengths) {
             for (lang in listOf(AppLanguage.GERMAN, AppLanguage.ENGLISH)) {
@@ -119,8 +119,8 @@ class WordRepositoryTest {
         val words = WordRepository.getWordsForStar(1)
 
         assertEquals(GameConstants.WORDS_PER_SESSION, words.size)
-        // Star 1 German: 4 and 5 letter words
-        assertTrue(words.all { it.length in 4..5 })
+        // Star 1 German: 3 and 4 letter words
+        assertTrue(words.all { it.length in 3..4 })
     }
 
     @Test

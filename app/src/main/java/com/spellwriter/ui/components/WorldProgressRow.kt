@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.spellwriter.data.models.MAX_STARS
 
 /**
@@ -26,12 +25,13 @@ fun WorldProgressRow(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             repeat(MAX_STARS) { index ->
                 val starNumber = index + 1
                 val isEarned = starNumber <= earnedStars
-                val isStartingStar = (starNumber == 1 && earnedStars == 0)  // AC4: Indicate starting point
+                val isStartingStar = (starNumber == 1 && earnedStars == 0)
 
                 StarIcon(
                     starNumber = starNumber,
@@ -42,7 +42,7 @@ fun WorldProgressRow(
                             onStarClick(starNumber)
                         }
                     },
-                    modifier = Modifier.size(56.dp)  // Exceeds 48dp minimum per WCAG 2.1
+                    modifier = Modifier.weight(1f)
                 )
             }
         }

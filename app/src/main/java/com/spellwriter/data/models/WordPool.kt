@@ -44,16 +44,16 @@ object WordPool {
 
     private val germanStar5 = listOf(
         // 7-letter words (5)
-        "STIEFEL", "FREIHEIT", "GEDICHT", "KNOCHEN", "SCHWANZ",
+        "STIEFEL", "GEDICHT", "KNOCHEN", "SCHWANZ", "WUERFEL",
         // 8-letter words (5)
-        "FREUNDSCHAFT", "GEBURTSTAG", "SCHLAFZIMMER", "BRIEFMARKE", "HANDTASCHE"
+        "ABENDROT", "EISVOGEL", "FLUGZEUG", "SCHULBUS", "ZEITPLAN"
     )
 
     private val germanStar6 = listOf(
         // 8-letter words (5)
-        "ABENDROT", "BLITZSCHLAG", "FAHRKARTE", "GRUNDSCHULE", "HAUSAUFGABE",
+        "ERDBEERE", "GEBAEUDE", "KALENDER", "NAECHSTE", "SCHLANGE",
         // 9-letter words (5)
-        "BRIEFKASTEN", "DONNERSTAG", "ERDBEERKUCHEN", "FEUERWEHRAUTO", "GEISTERBAHN"
+        "BUECHEREI", "FEUERWEHR", "HANDSCHUH", "SPIELZEUG", "STADTPLAN"
     )
 
     // English word lists
