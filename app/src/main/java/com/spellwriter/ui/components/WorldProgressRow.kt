@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.spellwriter.data.models.MAX_STARS
 
 /**
  * Displays world progress with name and 3 stars showing earned/unearned status.
@@ -24,11 +25,10 @@ fun WorldProgressRow(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 3 stars in a row
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            repeat(3) { index ->
+            repeat(MAX_STARS) { index ->
                 val starNumber = index + 1
                 val isEarned = starNumber <= earnedStars
                 val isStartingStar = (starNumber == 1 && earnedStars == 0)  // AC4: Indicate starting point

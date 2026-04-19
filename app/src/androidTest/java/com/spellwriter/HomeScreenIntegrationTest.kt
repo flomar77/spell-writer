@@ -3,6 +3,7 @@ package com.spellwriter
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.models.Progress
 import com.spellwriter.ui.screens.HomeScreen
 import org.junit.Rule
@@ -110,7 +111,7 @@ class HomeScreenIntegrationTest {
 
     @Test
     fun homeScreen_withMaxProgress_allStarsEarned() {
-        val progress = Progress(stars = 3)
+        val progress = Progress(stars = MAX_STARS)
 
         composeTestRule.setContent {
             HomeScreen(

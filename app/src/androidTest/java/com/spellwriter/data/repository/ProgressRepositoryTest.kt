@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.models.Progress
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -58,14 +59,14 @@ class ProgressRepositoryTest {
 
     @Test
     fun saveProgress_survivesRepositoryRecreation() = testScope.runTest {
-        val progress = Progress(stars = 3)
+        val progress = Progress(stars = MAX_STARS)
 
         repository.saveProgress(progress)
 
         val newRepository = ProgressRepository(context)
         val loaded = newRepository.progressFlow.first()
 
-        assertEquals(3, loaded.stars)
+        assertEquals(MAX_STARS, loaded.stars)
     }
 
     @Test
@@ -91,7 +92,7 @@ class ProgressRepositoryTest {
         repository.saveProgress(Progress(stars = 3))
 
         val loaded = repository.progressFlow.first()
-        assertEquals(3, loaded.stars)
+        assertEquals(3, loaded.stars) // intermediate value, not max
     }
 
     @Test
@@ -107,11 +108,11 @@ class ProgressRepositoryTest {
 
     @Test
     fun saveProgress_handlesMaximumStars() = testScope.runTest {
-        val progress = Progress(stars = 3)
+        val progress = Progress(stars = MAX_STARS)
 
         repository.saveProgress(progress)
 
         val loaded = repository.progressFlow.first()
-        assertEquals(3, loaded.stars)
+        assertEquals(MAX_STARS, loaded.stars)
     }
 }

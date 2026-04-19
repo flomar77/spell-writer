@@ -1,5 +1,6 @@
 package com.spellwriter
 
+import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.models.Progress
 import org.junit.Test
 import org.junit.Assert.*
@@ -11,7 +12,7 @@ class ProgressTest {
         assertEquals(1, Progress(stars = 0).getCurrentStar())
         assertEquals(2, Progress(stars = 1).getCurrentStar())
         assertEquals(3, Progress(stars = 2).getCurrentStar())
-        assertEquals(3, Progress(stars = 3).getCurrentStar()) // capped at 3
+        assertEquals(MAX_STARS, Progress(stars = MAX_STARS).getCurrentStar()) // capped at MAX_STARS
     }
 
     @Test
@@ -32,10 +33,10 @@ class ProgressTest {
 
     @Test
     fun isStarEarned_handlesAllStarsEarned() {
-        val progress = Progress(stars = 3)
-        assertTrue(progress.isStarEarned(1))
-        assertTrue(progress.isStarEarned(2))
-        assertTrue(progress.isStarEarned(3))
+        val progress = Progress(stars = MAX_STARS)
+        for (star in 1..MAX_STARS) {
+            assertTrue(progress.isStarEarned(star))
+        }
     }
 
     @Test
@@ -55,9 +56,9 @@ class ProgressTest {
     }
 
     @Test
-    fun isComplete_returnsTrueWhenThreeStarsEarned() {
-        assertTrue(Progress(stars = 3).isComplete())
-        assertFalse(Progress(stars = 2).isComplete())
+    fun isComplete_returnsTrueWhenAllStarsEarned() {
+        assertTrue(Progress(stars = MAX_STARS).isComplete())
+        assertFalse(Progress(stars = MAX_STARS - 1).isComplete())
     }
 
     @Test
@@ -74,7 +75,7 @@ class ProgressTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun progress_rejectsTooManyStars() {
-        Progress(stars = 4)
+        Progress(stars = MAX_STARS + 1)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -84,6 +85,6 @@ class ProgressTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun isStarEarned_rejectsInvalidStarNumber_tooHigh() {
-        Progress(stars = 1).isStarEarned(4)
+        Progress(stars = 1).isStarEarned(MAX_STARS + 1)
     }
 }
