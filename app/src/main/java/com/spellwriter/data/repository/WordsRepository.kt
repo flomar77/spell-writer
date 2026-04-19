@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.spellwriter.data.models.GameConstants
 import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.network.RetrofitInstance
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 
@@ -72,6 +73,8 @@ class WordsRepository(context: Context) {
 
             Log.i(TAG, "Successfully fetched and cached ${validWords.size} words for star $star ($lang)")
             Result.success(validWords)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch words for star $star ($lang): ${e.message}", e)
             Result.failure(e)

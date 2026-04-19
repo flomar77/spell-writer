@@ -76,10 +76,16 @@ fun GameScreen(
     val sessionRepository = remember { com.spellwriter.data.repository.SessionRepository(context) }
     val wordsRepository = remember { com.spellwriter.data.repository.WordsRepository(context) }
 
-    val viewModel = remember(starNumber, isReplaySession, audioManager) {
+    // Freeze starNumber at screen entry time. The parent's progress flow updates
+    // starNumber (via progress.getCurrentStar()) as soon as a star is saved, which
+    // would recreate the ViewModel and destroy the pending celebration state.
+    // Auto-progression is handled internally by GameViewModel.continueToNextStar().
+    val frozenStarNumber = remember { starNumber }
+
+    val viewModel = remember(frozenStarNumber, isReplaySession, audioManager) {
         GameViewModel(
             context = context,
-            starNumber = starNumber,
+            starNumber = frozenStarNumber,
             isReplaySession = isReplaySession,
             progressRepository = progressRepository,
             sessionRepository = sessionRepository,

@@ -38,30 +38,19 @@ fun CelebrationSequence(
     var celebrationPhase by remember { mutableStateOf(CelebrationPhase.NONE) }
     var selectedGifPath by remember { mutableStateOf<String?>(null) }
 
-    // Orchestrate the celebration sequence - skip animations, go straight to GIF
+    // Trigger celebration when showCelebration becomes true
     LaunchedEffect(showCelebration) {
-        if (showCelebration && celebrationPhase == CelebrationPhase.NONE) {
-            // Select random GIF from assets
+        if (showCelebration) {
+            celebrationPhase = CelebrationPhase.NONE
             selectedGifPath = GifSelector.selectRandomGif(context)
 
             if (selectedGifPath != null) {
-                // Show GIF reward overlay
                 celebrationPhase = CelebrationPhase.GIF_REWARD
-                // User controls progression by tapping Continue button
             } else {
-                // No GIF available - skip overlay and proceed
                 Log.w("CelebrationSequence", "No GIF found for star $starLevel - skipping reward overlay")
                 celebrationPhase = CelebrationPhase.COMPLETE
                 onContinueToNextStar()
             }
-        }
-    }
-
-    // Reset phase when celebration is dismissed
-    LaunchedEffect(showCelebration) {
-        if (!showCelebration) {
-            celebrationPhase = CelebrationPhase.NONE
-            selectedGifPath = null
         }
     }
 

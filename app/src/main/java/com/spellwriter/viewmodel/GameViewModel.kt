@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.spellwriter.audio.AudioManager
 import com.spellwriter.data.models.AppLanguage
 import com.spellwriter.data.models.GameConstants
+import com.spellwriter.data.models.MAX_STARS
 import com.spellwriter.data.models.GameState
 import com.spellwriter.data.models.GhostExpression
 import com.spellwriter.data.models.Progress
@@ -563,12 +564,12 @@ class GameViewModel(
             _celebrationStarLevel.value = 0
 
             // Check if next star is available
-            if (nextStar <= 3) {
+            if (nextStar <= MAX_STARS) {
                 // Load word pool for next star and continue playing
                 Log.d(TAG, "Auto-progressing to star $nextStar")
                 loadWordsForGivenStar(nextStar)
             } else {
-                // No next star available (completed star 3) - return to home
+                // No next star available - return to home
                 Log.d(TAG, "All stars completed - returning to home")
                 onAllStarsCompleted()
             }
